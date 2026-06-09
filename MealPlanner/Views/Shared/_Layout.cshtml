@@ -1,50 +1,116 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
+
 <head>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MealPlanner</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MealPlanner.styles.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@4"></script>
+
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MealPlanner</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+
+<body class="flex min-h-screen flex-col overflow-x-hidden bg-[#c8e6d5] px-[clamp(12px,2vw,24px)] py-[clamp(12px,2vw,24px)]">
+
+    <div class="mx-auto flex w-full max-w-[1800px] flex-grow flex-col rounded-2xl border border-slate-100 bg-white shadow-lg">
+
+        <header class="w-full rounded-t-2xl border-b border-slate-100 bg-white/70 backdrop-blur-md">
+
+            <div class="flex flex-wrap items-center justify-between gap-[clamp(10px,2vw,24px)]
+                px-[clamp(12px,2.5vw,40px)] py-[clamp(10px,1.5vw,20px)]">
+
+                <a href="/"
+                   class="font-extrabold tracking-tight whitespace-nowrap text-[clamp(20px,2vw,28px)] text-slate-900
+                    transition-colors duration-200 hover:text-emerald-600">
+                    MealPlanner
+                </a>
+
+                <nav class="flex flex-wrap items-center gap-[clamp(12px,2vw,40px)]
+                    text-[clamp(14px,1.2vw,16px)]">
+
+                    <a asp-controller="Recipe" asp-action="Index"
+                       class="relative font-medium whitespace-nowrap text-slate-800 after:absolute after:-bottom-1 after:left-0 after:h-[2px]
+                        after:w-0 after:bg-emerald-500 after:transition-all after:duration-300
+                        hover:text-emerald-600 hover:after:w-full">
+                        Рецепты
+                    </a>
+
+                    <a href="#"
+                       class="relative font-medium whitespace-nowrap text-slate-800 after:absolute after:-bottom-1 after:left-0 after:h-[2px]
+                        after:w-0 after:bg-emerald-500 after:transition-all after:duration-300
+                        hover:text-emerald-600 hover:after:w-full">
+                        План на неделю
+                    </a>
+
+                    <a href="#"
+                       class="relative font-medium whitespace-nowrap text-slate-800 after:absolute after:-bottom-1 after:left-0 after:h-[2px]
+                        after:w-0 after:bg-emerald-500 after:transition-all after:duration-300
+                        hover:text-emerald-600 hover:after:w-full">
+                        Мои продукты
+                    </a>
+
+                </nav>
+
+                <div class="flex flex-wrap items-center gap-[clamp(8px,1.5vw,16px)]">
+
+                    <button class="rounded-full border border-slate-300 bg-white px-[clamp(14px,1.5vw,20px)]
+                        py-[clamp(6px,1vw,10px)] font-medium
+                        whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-slate-800
+                        transition-all duration-200
+                        hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md
+                        focus:ring-2 focus:ring-emerald-400 focus:outline-none
+                        active:translate-y-0 active:shadow-sm">
+                        Войти
+                    </button>
+
+                    <button class="rounded-full bg-emerald-500 px-[clamp(14px,1.5vw,20px)]
+                        py-[clamp(6px,1vw,10px)] font-medium
+                        whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-white
+                        transition-all duration-200
+                        hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg
+                        focus:ring-2 focus:ring-emerald-300 focus:outline-none
+                        active:translate-y-0 active:shadow-sm">
+                        Регистрация
+                    </button>
+
                 </div>
+
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+        </header>
+
+        <main role="main" class="flex-grow px-[clamp(12px,2.5vw,40px)] py-[clamp(16px,2.5vw,32px)] text-slate-800">
             @RenderBody()
         </main>
+
+        <footer class="rounded-b-2xl border-t border-slate-100 bg-slate-50
+            px-[clamp(16px,3vw,40px)] py-[clamp(16px,2vw,24px)]">
+            <div class="flex flex-wrap items-center justify-between gap-4 text-base text-slate-600">
+
+                <div class="font-medium whitespace-nowrap text-slate-700">
+                    © @DateTime.Now.Year MealPlanner
+                </div>
+
+                <div class="text-sm whitespace-nowrap text-slate-500">
+                    ASP.NET Core 10 • PostgreSQL • EF Core • Tailwind CSS
+                </div>
+                <div>
+                    <a href="https://github.com/neqqwi/MealPlanner"
+                       target="_blank"
+                       class="flex items-center gap-2 font-medium whitespace-nowrap text-slate-700 transition-all duration-200 hover:text-emerald-600 hover:underline">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                        </svg>
+                        GitHub
+                    </a>
+                </div>
+
+            </div>
+
+        </footer>
+
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - MealPlanner - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
