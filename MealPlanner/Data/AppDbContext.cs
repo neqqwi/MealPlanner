@@ -28,7 +28,12 @@ namespace MealPlanner.Data
                 .WithMany(i => i.RecipeIngredients)
                 .HasForeignKey(ri => ri.IngredientId)
                 .OnDelete(DeleteBehavior.Cascade);
-        }
 
+            modelBuilder.Entity<Recipe>()
+                .HasIndex(r => r.Name);
+
+            modelBuilder.Entity<Ingredient>()
+                .HasIndex(i => i.Name);
+        }
     }
 }
