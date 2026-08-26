@@ -29,12 +29,3 @@ Instructions on how to run the project locally will be added here.
 ## Screenshots
 
 Screenshots will be added as the UI is developed.
-
-## Credits
-
-Photos taken from [Unsplash](https://unsplash.com):
-
-- Roasted Chicken by [Cisco Lin](https://unsplash.com/@cok3nosugar)
-- Chocolate Lava Cake by [Max Griss](https://unsplash.com/@grissphoto)
-- Apple Crumble Pie by [Diliara Garifullina](https://unsplash.com/@dilja96)
-- Thai Beef Salad by [Eiliv Aceron](https://unsplash.com/@shootdelicious)
