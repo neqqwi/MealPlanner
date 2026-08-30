@@ -19,12 +19,36 @@ namespace MealPlanner.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 25, string? searchTerm = null)
         {
-            var ingredients = await _context.Ingredients
-                .OrderBy(i => i.Name)
+            IQueryable<Ingredient> query = _context.Ingredients.OrderBy(i => i.Name);
+
+            if (searchTerm != null) query = query.Where(i => i.Name.ToLower().Contains(searchTerm.ToLower()));
+
+            var totalItems = await query.CountAsync(cancellationToken);
+
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            if (page < 1) page = 1;
+
+            if (page > totalPages && totalPages > 0) page = totalPages;
+
+            int itemsToSkip = (page - 1) * pageSize;
+
+            var pageResult = await query
+                .Skip(itemsToSkip)
+                .Take(pageSize)
                 .ToListAsync(cancellationToken);
-            return View(ingredients);
+
+            PaginatedListViewModel<Ingredient> ingredientList = new PaginatedListViewModel<Ingredient>
+            {
+                Items = pageResult,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                SearchTerm = searchTerm
+            };
+
+            return View(ingredientList);
         }
 
         [HttpGet]
