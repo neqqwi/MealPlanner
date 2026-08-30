@@ -1,0 +1,122 @@
+﻿@{
+    ViewData["Title"] = "Список ингредиентов";
+}
+@model IEnumerable<Ingredient>
+
+<div class="mx-auto max-w-3xl">
+
+    <div class="flex flex-col gap-6">
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
+                Ингредиенты
+            </h1>
+
+            <a asp-action="Create"
+               asp-controller="Ingredient"
+               class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
+                      transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                + Добавить ингредиент
+            </a>
+        </div>
+
+        <div class="relative">
+            <input type="text"
+                   id="ingredientSearch"
+                   placeholder="Поиск ингредиента..."
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 pl-11 text-slate-900 placeholder-slate-400
+                          transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" 
+                 class="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-400">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+        </div>
+
+<div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <table class="min-w-full">
+        <thead class="bg-slate-50">
+            <tr>
+                <th scope="col" class="w-5/12 px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Название
+                </th>
+                <th scope="col" class="w-48 px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                    Ед. изм.
+                </th>
+                @* <th scope="col" class="px-6 py-4 text-right text-sm font-semibold text-slate-700">
+                    Действия
+                </th> *@
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white" id="ingredientsTableBody">
+            @foreach (var ingredient in Model)
+            {
+                <tr class="group transition hover:bg-slate-50">
+                    <td class="w-5/12 px-6 py-4 text-sm font-medium text-slate-900">
+                        @ingredient.Name
+                    </td>
+                    <td class="w-48 px-6 py-4 text-center text-sm text-slate-600">
+                        @ingredient.Unit
+                    </td>
+                    @* <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a asp-action="Edit"
+                               asp-route-id="@ingredient.Id"
+                               class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
+                                Редактировать
+                            </a>
+                            <a asp-action="Delete"
+                               asp-route-id="@ingredient.Id"
+                               class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                Удалить
+                            </a>
+                        </div>
+                    </td> *@
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!Model.Any())
+    {
+        <div class="flex flex-col items-center justify-center py-12 text-slate-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mb-3 size-12 text-slate-300">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+            <p class="text-sm">Список ингредиентов пуст</p>
+        </div>
+    }
+
+    <div id="noResultsMessage" class="hidden flex-col items-center justify-center py-12 text-slate-500">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mb-3 size-12 text-slate-300">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <p class="text-sm">Ничего не найдено по вашему запросу</p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('ingredientSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.trim().toLowerCase();
+        const rows = document.querySelectorAll('#ingredientsTableBody tr');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        let visibleRows = 0;
+        
+        rows.forEach(row => {
+            const nameCell = row.querySelector('td:first-child');
+            if (nameCell) {
+                const ingredientName = nameCell.textContent.trim().toLowerCase();
+                const isVisible = ingredientName.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleRows++;
+            }
+        });
+        
+        if (searchTerm.length > 0 && visibleRows === 0) {
+            noResultsMessage.classList.remove('hidden');
+            noResultsMessage.classList.add('flex');
+        } else {
+            noResultsMessage.classList.add('hidden');
+            noResultsMessage.classList.remove('flex');
+        }
+    });
+</script>
