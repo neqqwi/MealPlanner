@@ -1,6 +1,7 @@
 ﻿using MealPlanner.Data;
 using MealPlanner.Models;
 using MealPlanner.ViewModels;
+using MealPlanner.ViewModels.Recipe;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;

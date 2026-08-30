@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MealPlanner.ViewModels
+namespace MealPlanner.ViewModels.Ingredient
 {
     public class IngredientCreateViewModel
     {

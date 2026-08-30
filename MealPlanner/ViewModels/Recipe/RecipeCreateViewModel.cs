@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
-namespace MealPlanner.ViewModels
+namespace MealPlanner.ViewModels.Recipe
 {
     public class RecipeCreateViewModel
     {
