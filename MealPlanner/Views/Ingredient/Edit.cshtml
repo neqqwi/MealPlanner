@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Редактирование ингредиента";
+}
+
+@model MealPlanner.ViewModels.Ingredient.IngredientEditViewModel
+
+<div class="mx-auto max-w-3xl">
+    
+    <div class="mb-6">
+        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">Редактировать ингредиент</h1>
+        <p class="mt-1 text-sm text-slate-600">Измените информацию об ингредиенте</p>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <form asp-action="Edit" method="post" class="space-y-6 p-6" id="ingredientEditForm">
+            
+            <div asp-validation-summary="ModelOnly" class="rounded-xl bg-red-50 p-3 text-sm text-red-500"></div>
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="Id" />
+            
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label asp-for="Name" class="text-sm font-medium text-slate-700">
+                        Название ингредиента <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="Name" required
+                           class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" 
+                           placeholder="Например: Куркума" />
+                    <span asp-validation-for="Name" class="text-sm text-red-500"></span>
+                </div>
+
+                <div class="space-y-2">
+                    <label asp-for="Unit" class="text-sm font-medium text-slate-700">
+                        Единица измерения <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="Unit" required
+                            class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <option value="г">грамм (г)</option>
+                        <option value="мл">миллилитр (мл)</option>
+                    </select>
+                    <span asp-validation-for="Unit" class="text-sm text-red-500"></span>
+                </div>
+            </div>
+
+            <hr class="border-slate-200" />
+
+            <div class="flex justify-end gap-3">
+                <a asp-action="Index" class="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
+                    Отмена
+                </a>
+                <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                    Сохранить изменения
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

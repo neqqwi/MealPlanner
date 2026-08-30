@@ -114,5 +114,77 @@ namespace MealPlanner.Controllers
                 return View(viewModel);
             }
         }
+
+        [HttpGet("Edit/{id}")]
+        public async Task<IActionResult> Edit(CancellationToken cancellationToken, int id)
+        {
+            var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
+
+            if (ingredient == null) return NotFound();
+
+            IngredientEditViewModel ingredientEdit = new IngredientEditViewModel
+            {
+                Id = id,
+                Name = ingredient.Name,
+                Unit = ingredient.Unit
+            };
+
+            return View(ingredientEdit);
+        }
+
+        [HttpPost("Edit/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(IngredientEditViewModel viewModel, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(viewModel);
+            }
+
+            try
+            {
+                var trimmedName = viewModel.Name.Trim();
+                var normalizedName = char.ToUpper(trimmedName[0]) + trimmedName.Substring(1).ToLower();
+                var existingIngredient = await _context.Ingredients
+                                        .FirstOrDefaultAsync(i => i.Name.ToLower() == normalizedName.ToLower()
+                                                               && i.Id != viewModel.Id, cancellationToken);
+
+                if (existingIngredient != null)
+                {
+                    if (existingIngredient.Unit == viewModel.Unit)
+                    {
+                        ModelState.AddModelError("",
+                            $"Ингредиент \"{existingIngredient.Name}\" ({existingIngredient.Unit}) уже существует в базе данных");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("",
+                            $"Ингредиент \"{existingIngredient.Name}\" уже существует в базе данных с единицей измерения \"{existingIngredient.Unit}\". Дублирование с другой единицей измерения не допускается.");
+                    }
+                    return View(viewModel);
+                }
+
+                var ingredientToEdit = await _context.Ingredients.FindAsync(viewModel.Id, cancellationToken);
+
+                if (ingredientToEdit == null) return NotFound();
+
+                ingredientToEdit.Name = normalizedName;
+                ingredientToEdit.Unit = viewModel.Unit;
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Редактирование ингредиента '{IngredientName}' было отменено", viewModel.Name);
+                return new StatusCodeResult(499);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при изменении ингредиента '{IngredientName}'", viewModel.Name);
+                ModelState.AddModelError("", "Произошла ошибка при сохранении изменений. Попробуйте еще раз.");
+                return View(viewModel);
+            }
+        }
     }
 }
