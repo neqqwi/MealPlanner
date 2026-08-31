@@ -186,5 +186,77 @@ namespace MealPlanner.Controllers
                 return View(viewModel);
             }
         }
+
+        [HttpGet("Delete/{id}")]
+        public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
+        {
+            var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
+
+            if (ingredient == null) return NotFound();
+
+            var viewModel = new IngredientDeleteViewModel
+            {
+                Id = ingredient.Id,
+                Name = ingredient.Name,
+                Unit = ingredient.Unit
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost("Delete/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
+
+                if (ingredient == null) return NotFound();
+
+                var recipeUsageQuery = _context.RecipeIngredients
+                    .Where(ri => ri.IngredientId == id);
+
+                var recipesCount = await recipeUsageQuery.CountAsync(cancellationToken);
+
+                if (recipesCount > 0)
+                {
+                    var viewModel = new IngredientDeleteViewModel
+                    {
+                        Id = ingredient.Id,
+                        Name = ingredient.Name,
+                        Unit = ingredient.Unit,
+                        RecipesCount = recipesCount,
+                        ExampleRecipes = await recipeUsageQuery
+                            .Take(3)
+                            .Select(ri => new RecipeReference
+                            {
+                                RecipeId = ri.RecipeId,
+                                RecipeName = ri.Recipe.Name
+                            })
+                            .ToListAsync(cancellationToken)
+                    };
+
+                    return View(viewModel);
+                }
+
+                _context.Ingredients.Remove(ingredient);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                TempData["SuccessMessage"] = $"Ингредиент \"{ingredient.Name} ({ingredient.Unit})\" успешно удален.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("Удаление ингредиента с ID {IngredientId} было отменено", id);
+                return new StatusCodeResult(499);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при удалении ингредиента с ID {IngredientId}", id);
+                TempData["ErrorMessage"] = "Произошла ошибка при удалении ингредиента. Попробуйте еще раз.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
     }
 }

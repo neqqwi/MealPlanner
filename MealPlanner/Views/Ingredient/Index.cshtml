@@ -63,7 +63,12 @@
                                     <a asp-action="Edit"
                                        asp-route-id="@ingredient.Id"
                                        class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
-                                        Редактировать
+                                       Редактировать
+                                    </a>
+                                    <a asp-action="Delete"
+                                       asp-route-id="@ingredient.Id"
+                                       class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                       Удалить
                                     </a>
                                 </div>
                             </td>
