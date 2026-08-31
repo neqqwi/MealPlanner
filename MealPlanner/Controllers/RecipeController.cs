@@ -172,5 +172,21 @@ namespace MealPlanner.Controllers
             viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
             return View(viewModel);
         }
+
+        [HttpGet("Details/{id}")]
+        public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+        {
+            var recipe = await _context.Recipes
+                .Include(r => r.RecipeIngredients)
+                .ThenInclude(ri => ri.Ingredient)
+                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+            if (recipe == null)
+            {
+                return NotFound();
+            }
+
+            return View(recipe);
+        }
     }
 }
