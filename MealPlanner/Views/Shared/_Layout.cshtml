@@ -2,12 +2,14 @@
 <html lang="ru">
 
 <head>
-
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MealPlanner</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@4"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
+    <link href="~/css/recipe-form.css" rel="stylesheet" />
 </head>
 
 <body class="flex min-h-screen flex-col overflow-x-hidden bg-[#c8e6d5] px-[clamp(12px,2vw,24px)] py-[clamp(12px,2vw,24px)]">
@@ -117,6 +119,26 @@
         </footer>
 
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $.extend($.validator.messages, {
+            required: "Это поле обязательно для заполнения.",
+            number: "Пожалуйста, введите число.",
+            digits: "Пожалуйста, вводите только цифры.",
+            min: $.validator.format("Пожалуйста, введите значение, большее или равное {0}."),
+            max: $.validator.format("Пожалуйста, введите значение, меньшее или равное {0}."),
+            range: $.validator.format("Пожалуйста, введите значение от {0} до {1}."),
+            minlength: $.validator.format("Пожалуйста, введите не меньше {0} символов."),
+            maxlength: $.validator.format("Пожалуйста, введите не больше {0} символов."),
+            rangelength: $.validator.format("Пожалуйста, введите значение длиной от {0} до {1} символов."),
+            email: "Пожалуйста, введите корректный адрес электронной почты.",
+            url: "Пожалуйста, введите корректный URL."
+        });
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </body>
 

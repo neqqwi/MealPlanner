@@ -19,7 +19,7 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
-        [HttpGet]
+        
         public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 25, string? searchTerm = null)
         {
             IQueryable<Ingredient> query = _context.Ingredients.OrderBy(i => i.Name);
@@ -115,7 +115,7 @@ namespace MealPlanner.Controllers
             }
         }
 
-        [HttpGet("Edit/{id}")]
+        [HttpGet]
         public async Task<IActionResult> Edit(CancellationToken cancellationToken, int id)
         {
             var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
@@ -132,7 +132,7 @@ namespace MealPlanner.Controllers
             return View(ingredientEdit);
         }
 
-        [HttpPost("Edit/{id}")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(IngredientEditViewModel viewModel, CancellationToken cancellationToken)
         {
@@ -187,7 +187,7 @@ namespace MealPlanner.Controllers
             }
         }
 
-        [HttpGet("Delete/{id}")]
+        [HttpGet]
         public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
         {
             var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
@@ -204,7 +204,7 @@ namespace MealPlanner.Controllers
             return View(viewModel);
         }
 
-        [HttpPost("Delete/{id}")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {

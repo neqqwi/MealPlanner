@@ -1,20 +1,23 @@
 ﻿@{
-    ViewData["Title"] = "Добавление рецепта";
+    ViewData["Title"] = "Редактирование рецепта";
 }
 
-@model MealPlanner.ViewModels.Recipe.RecipeCreateViewModel
+@model MealPlanner.ViewModels.Recipe.RecipeEditViewModel
 
 <div class="mx-auto max-w-3xl">
     
     <div class="mb-6">
-        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">Создать новый рецепт</h1>
-        <p class="mt-1 text-sm text-slate-600">Заполните информацию о блюде и добавьте ингредиенты</p>
+        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">Редактировать рецепт</h1>
+        <p class="mt-1 text-sm text-slate-600">Измените информацию о блюде и его ингредиентах</p>
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <form asp-action="Create" method="post" enctype="multipart/form-data" class="space-y-6 p-6" id="recipeForm">
+        <form asp-controller="Recipe" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6 p-6" id="recipeEditForm">
             
             <div asp-validation-summary="ModelOnly" class="rounded-xl bg-red-50 p-3 text-sm text-red-500"></div>
+           
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CurrentImagePath" />
             
             <div class="space-y-6">
                 <div class="space-y-2">
@@ -65,12 +68,23 @@
                             <span id="imageFile-error" class="mt-1 block text-sm text-red-500"></span>
                         </div>
                         
-                        <div id="imagePreview" class="mt-3 hidden">
+                        <div id="imagePreview" class="mt-3 @(string.IsNullOrEmpty(Model.CurrentImagePath) ? "hidden" : "")">
                             <div class="relative inline-block">
-                                <img src="" alt="Превью" id="previewImage" class="h-32 w-auto rounded-lg object-cover" />
+                                <img src="@(string.IsNullOrEmpty(Model.CurrentImagePath) ? "" : Model.CurrentImagePath)" 
+                                     alt="Превью" 
+                                     id="previewImage" 
+                                     class="h-32 w-auto rounded-lg object-cover" />
                                 <button type="button" id="clearPreviewButton" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition hover:bg-red-600 hover:shadow-lg">×</button>
                             </div>
                         </div>
+                        
+                        @if (!string.IsNullOrEmpty(Model.CurrentImagePath))
+                        {
+                            <p class="mt-2 text-xs text-slate-500">
+                                Текущее изображение. Загрузите новое, чтобы заменить.
+                            </p>
+                        }
+                        
                         <span asp-validation-for="ImageFile" class="text-sm text-red-500"></span>
                     </div>
                 </div>
@@ -139,11 +153,11 @@
             <hr class="border-slate-200" />
 
             <div class="flex justify-end gap-3">
-                <a asp-action="Index" class="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
+                <a asp-controller="Recipe" asp-action="Details" asp-route-id="@Model.Id" class="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
                     Отмена
                 </a>
                 <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
-                    Создать рецепт
+                    Сохранить изменения
                 </button>
             </div>
         </form>

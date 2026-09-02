@@ -1,0 +1,54 @@
+﻿.ingredient-row {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.ts-wrapper {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.ts-control {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    color: #0f172a !important;
+    background: white !important;
+    min-height: auto !important;
+    line-height: 1.5 !important;
+    transition: all 0.2s !important;
+}
+
+.ts-wrapper.focus .ts-control {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+    outline: none !important;
+}
+
+.ts-dropdown {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    margin-top: 0.25rem !important;
+    z-index: 50 !important;
+    font-size: 0.875rem !important;
+}
+
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem !important;
+        color: #0f172a !important;
+    }
+
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background: #f0fdf4 !important;
+            color: #059669 !important;
+        }
+
+.ts-wrapper.single.input-active {
+    background: transparent !important;
+    border: none !important;
+}
