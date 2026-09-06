@@ -191,14 +191,27 @@ namespace MealPlanner.Controllers
         public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
         {
             var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
-
             if (ingredient == null) return NotFound();
+
+            var recipeUsageQuery = _context.RecipeIngredients
+                .Where(ri => ri.IngredientId == id);
+
+            var recipesCount = await recipeUsageQuery.CountAsync(cancellationToken);
 
             var viewModel = new IngredientDeleteViewModel
             {
                 Id = ingredient.Id,
                 Name = ingredient.Name,
-                Unit = ingredient.Unit
+                Unit = ingredient.Unit,
+                RecipesCount = recipesCount,
+                ExampleRecipes = await recipeUsageQuery
+                .Take(3)
+                .Select(ri => new RecipeReference
+                {
+                    RecipeId = ri.RecipeId,
+                    RecipeName = ri.Recipe.Name
+                })
+                .ToListAsync(cancellationToken)
             };
 
             return View(viewModel);
@@ -211,7 +224,6 @@ namespace MealPlanner.Controllers
             try
             {
                 var ingredient = await _context.Ingredients.FindAsync(id, cancellationToken);
-
                 if (ingredient == null) return NotFound();
 
                 var recipeUsageQuery = _context.RecipeIngredients
@@ -221,23 +233,8 @@ namespace MealPlanner.Controllers
 
                 if (recipesCount > 0)
                 {
-                    var viewModel = new IngredientDeleteViewModel
-                    {
-                        Id = ingredient.Id,
-                        Name = ingredient.Name,
-                        Unit = ingredient.Unit,
-                        RecipesCount = recipesCount,
-                        ExampleRecipes = await recipeUsageQuery
-                            .Take(3)
-                            .Select(ri => new RecipeReference
-                            {
-                                RecipeId = ri.RecipeId,
-                                RecipeName = ri.Recipe.Name
-                            })
-                            .ToListAsync(cancellationToken)
-                    };
-
-                    return View(viewModel);
+                    TempData["ErrorMessage"] = $"Нельзя удалить ингредиент \"{ingredient.Name} ({ingredient.Unit})\", так как он используется в {recipesCount} рецептах.";
+                    return RedirectToAction(nameof(Delete), new { id = id });
                 }
 
                 _context.Ingredients.Remove(ingredient);
@@ -255,7 +252,7 @@ namespace MealPlanner.Controllers
             {
                 _logger.LogError(ex, "Ошибка при удалении ингредиента с ID {IngredientId}", id);
                 TempData["ErrorMessage"] = "Произошла ошибка при удалении ингредиента. Попробуйте еще раз.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
         }
     }
