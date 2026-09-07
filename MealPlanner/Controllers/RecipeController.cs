@@ -3,6 +3,7 @@ using MealPlanner.Models;
 using MealPlanner.ViewModels;
 using MealPlanner.ViewModels.Ingredient;
 using MealPlanner.ViewModels.Recipe;
+using MealPlanner.ViewModels.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(CancellationToken cancellationToken, string? searchTerm = null)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 8, string? searchTerm = null)
         {
             IQueryable<Recipe> query = _context.Recipes.OrderByDescending(r => r.Id);
 
@@ -36,11 +37,28 @@ namespace MealPlanner.Controllers
                 query = query.Where(r => r.Name.ToLower().Contains(searchTerm.ToLower()));
             }
 
-            var recipes = await query.ToListAsync(cancellationToken);
+            var totalItems = await query.CountAsync(cancellationToken);
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-            ViewData["SearchTerm"] = searchTerm;
+            if (page < 1) page = 1;
+            if (page > totalPages && totalPages > 0) page = totalPages;
 
-            return View(recipes);
+            int itemsToSkip = (page - 1) * pageSize;
+
+            var pageResult = await query
+                .Skip(itemsToSkip)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            var viewModel = new PaginatedListViewModel<Recipe>
+            {
+                Items = pageResult,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                SearchTerm = searchTerm
+            };
+
+            return View(viewModel);
         }
 
         [HttpGet]
