@@ -27,9 +27,19 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken, string? searchTerm = null)
         {
-            var recipes = await _context.Recipes.ToListAsync(cancellationToken);
+            IQueryable<Recipe> query = _context.Recipes.OrderByDescending(r => r.Id);
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(r => r.Name.ToLower().Contains(searchTerm.ToLower()));
+            }
+
+            var recipes = await query.ToListAsync(cancellationToken);
+
+            ViewData["SearchTerm"] = searchTerm;
+
             return View(recipes);
         }
 

@@ -16,12 +16,9 @@
 
     <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         
-        @if (!string.IsNullOrEmpty(Model.ImagePath))
-        {
-            <div class="h-80 w-full overflow-hidden sm:h-96">
-                <img src="@Model.ImagePath" alt="@Model.Name" class="h-full w-full object-cover object-center" />
-            </div>
-        }
+        <div class="h-80 w-full overflow-hidden sm:h-96">
+            <img src="@Model.ImagePath" onerror="this.onerror=null; this.src='/images/no-image.svg';" class="h-full w-full object-cover object-center"/>
+        </div>
 
         <div class="p-6 sm:p-8">
             <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
