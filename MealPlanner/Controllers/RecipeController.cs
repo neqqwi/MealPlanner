@@ -1,6 +1,7 @@
 ﻿using MealPlanner.Data;
 using MealPlanner.Models;
 using MealPlanner.ViewModels;
+using MealPlanner.ViewModels.Ingredient;
 using MealPlanner.ViewModels.Recipe;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -357,6 +358,56 @@ namespace MealPlanner.Controllers
                 ModelState.AddModelError("", "Произошла ошибка при сохранении изменений. Попробуйте еще раз.");
                 return await ReturnViewWithIngredients(viewModel, cancellationToken);
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int? id, CancellationToken cancellationToken)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var recipe = await _context.Recipes
+                .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+
+            if (recipe == null)
+            {
+                return NotFound();
+            }
+
+            return View(recipe);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            var recipe = await _context.Recipes.FindAsync(new object?[] { id }, cancellationToken);
+
+            if (recipe != null)
+            {
+                if (!string.IsNullOrEmpty(recipe.ImagePath) && recipe.ImagePath != DefaultNoImagePath)
+                {
+                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", recipe.ImagePath.TrimStart('/'));
+                    try
+                    {
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        _logger.LogWarning(ex, "Не удалось удалить файл изображения рецепта: {FilePath}", oldFilePath);
+                    }
+                }
+
+                _context.Recipes.Remove(recipe);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         private async Task<IActionResult> ReturnViewWithIngredients(RecipeEditViewModel viewModel, CancellationToken cancellationToken)

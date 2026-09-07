@@ -100,18 +100,14 @@
                     Добавить в план
                 </button>*@
 
-
                 <a asp-action="Edit" asp-route-id="@Model.Id" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-slate-50 hover:text-emerald-600 hover:shadow-lg">
                     Редактировать
                 </a>
 
-               @* <form asp-controller="Recipe" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="inline">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-red-500 px-6 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg">
-                        Удалить
-                    </button>
-                </form>
-                 *@
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-medium text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-lg">
+                    Удалить
+                </a>
+
             </div>
 
         </div>

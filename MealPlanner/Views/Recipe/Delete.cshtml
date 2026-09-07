@@ -1,0 +1,77 @@
+﻿@{
+    ViewData["Title"] = "Удаление рецепта";
+}
+
+@model MealPlanner.Models.Recipe
+
+<div class="mx-auto max-w-3xl">
+
+    <div class="mb-6">
+        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">Удаление рецепта</h1>
+        <p class="mt-1 text-sm text-slate-600">Это действие нельзя будет отменить</p>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <form asp-action="Delete" method="post" class="space-y-6 p-6">
+            
+            <input type="hidden" asp-for="Id" />
+            @Html.AntiForgeryToken()
+            
+            <div class="space-y-4">
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div class="flex items-start gap-3">
+                        
+                        <svg class="mt-0.5 size-5 flex-shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+
+                        <div class="flex-1">
+
+                            <p class="text-sm font-medium text-amber-900">Внимание!</p>
+                            <p class="mt-1 text-sm text-amber-800">
+                                Вы собираетесь удалить рецепт <strong class="font-semibold">"@Model.Name"</strong>. Это действие удалит его из базы данных навсегда.
+                            </p>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+
+                    <div>
+                        <label class="text-sm font-medium text-slate-700">Название рецепта</label>
+                        <div class="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900">
+                            @Model.Name
+                        </div>
+                    </div>
+
+                    <div>
+                        @if (!string.IsNullOrEmpty(Model.ImagePath))
+                        {
+                            <label class="text-sm font-medium text-slate-700">Изображение рецепта</label>
+                            <div class="mt-1 h-80 w-full overflow-hidden rounded-xl border border-slate-200 sm:h-96">
+                                <img src="@Model.ImagePath" alt="@Model.Name" class="h-full w-full object-cover object-center" />
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+
+            <hr class="border-slate-200"/>
+            
+            <div class="flex justify-end gap-3">
+
+                <a asp-action="Details" asp-route-id="@Model.Id" class="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100">
+                    Отмена
+                </a> 
+                
+                <button type="submit" class="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg"> 
+                    Удалить рецепт 
+                </button> 
+
+            </div>
+
+        </form>
+    </div>
+</div>

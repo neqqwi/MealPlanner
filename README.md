@@ -8,7 +8,7 @@ create a single, optimized shopping list.
 
 ## Features
 
-- [ ] **Recipe Management:** Create, read, update, and delete recipes. *(Create/Read/Update done, Delete pending)*
+- [x] **Recipe Management:** Create, read, update, and delete recipes.
 - [x] **Ingredient Dictionary:** Centralized database of products with strict units (g, ml, pcs) to prevent typos and ensure accurate calculations.
 - [ ] **Weekly Meal Planner:** Assign recipes to specific days of the week.
 - [ ] **Smart Shopping List:** Automatically aggregates required ingredients for the week and subtracts items already available in the virtual "Pantry".
