@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace MealPlanner.Controllers
 {
     [Authorize]
-    public class IngredientController : Controller
+    public class IngredientController : BaseController
     {
         private readonly AppDbContext _context;
         private readonly ILogger<IngredientController> _logger;
@@ -19,16 +19,6 @@ namespace MealPlanner.Controllers
         {
             _context = context;
             _logger = logger;
-        }
-
-        private string GetCurrentUserId()
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? AppConstants.DemoUserId;
-            }
-
-            return AppConstants.DemoUserId;
         }
 
         [AllowAnonymous]

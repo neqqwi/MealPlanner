@@ -14,7 +14,7 @@ using System.Security.Claims;
 namespace MealPlanner.Controllers
 {
     [Authorize]
-    public class RecipeController : Controller
+    public class RecipeController : BaseController
     {
         private const int ImageSize = 640;
         private const string DefaultNoImagePath = "/images/no-image.svg";
@@ -26,16 +26,6 @@ namespace MealPlanner.Controllers
         {
             _context = context;
             _logger = logger;
-        }
-
-        private string GetCurrentUserId()
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? AppConstants.DemoUserId;
-            }
-
-            return AppConstants.DemoUserId;
         }
 
         [AllowAnonymous]
