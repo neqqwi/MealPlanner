@@ -24,7 +24,10 @@ namespace MealPlanner.Models
 
         [StringLength(250)]
         public string? ImagePath { get; set; }
-
         public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
+
+        [Required]
+        public string UserId { get; set; }
+        public ApplicationUser User { get; set; } = null;
     }
 }

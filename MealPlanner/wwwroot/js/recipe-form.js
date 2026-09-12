@@ -75,7 +75,7 @@
                 return;
             }
         
-            const maxSize = 5 * 1024 * 1024; // 5 MB
+            const maxSize = parseInt(document.getElementById('imageFileInput').dataset.maxSize, 10);
             if (file.size > maxSize) {
                 errorSpan.textContent = 'Размер файла не должен превышать 5MB';
                 e.target.value = '';

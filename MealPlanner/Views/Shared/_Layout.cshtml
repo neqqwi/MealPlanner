@@ -88,6 +88,23 @@
 
         </header>
 
+        @if (User?.Identity?.IsAuthenticated != true)
+        {
+            <div class="border-b border-sky-100 bg-sky-50 px-[clamp(12px,2.5vw,40px)] py-3">
+                <div class="flex items-start gap-3">
+                    <svg class="mt-0.5 size-5 flex-shrink-0 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="flex-1">
+                        <p class="text-base text-sky-900">
+                            <span class="font-bold">Демонстрационный режим:</span>
+                            Вы просматриваете тестовые данные. Для сохранения изменений требуется авторизация.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+
         <main role="main" class="flex-grow px-[clamp(12px,2.5vw,40px)] py-[clamp(16px,2.5vw,32px)] text-slate-800">
             @RenderBody()
         </main>

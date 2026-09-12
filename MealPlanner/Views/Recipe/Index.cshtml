@@ -11,13 +11,25 @@
             <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
                 Рецепты
             </h1>
-
-            <a asp-action="Create"
-               asp-controller="Recipe"
-               class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
-                      transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
-                + Создать рецепт
-            </a>
+            @if (User?.Identity?.IsAuthenticated != false)
+            {
+                <a asp-action="Create"
+                    asp-controller="Recipe"
+                    class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
+                    transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                    + Создать рецепт
+                </a>
+            }
+            else
+            {
+                <button type="button"
+                    onclick="alert('Для создания рецептов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
+                    asp-controller="Recipe"
+                    class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
+                    transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                    + Создать рецепт
+                </button>
+            }
         </div>
 
         <form asp-action="Index" method="get" class="relative">

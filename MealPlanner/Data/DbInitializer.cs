@@ -1,4 +1,5 @@
 ﻿using MealPlanner.Models;
+using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,111 +7,129 @@ namespace MealPlanner.Data
 {
     public static class DbInitializer
     {
-        public static void Initialize(AppDbContext context)
+        public static async Task InitializeAsync(AppDbContext context, UserManager<ApplicationUser> userManager)
         {
-            if (!context.Ingredients.Any())
+            var demoUser = await userManager.FindByIdAsync(AppConstants.DemoUserId);
+            if (demoUser == null)
+            {
+                demoUser = new ApplicationUser
+                {
+                    Id = AppConstants.DemoUserId,
+                    UserName = "demouser",
+                    Email = "demo@mealplanner.local",
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(demoUser, "DemoPassword123!");
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    throw new Exception($"Не удалось создать демо-пользователя: {errors}");
+                }
+            }
+
+            Initialize(context, AppConstants.DemoUserId);
+        }
+        public static void Initialize(AppDbContext context, string userId)
+        {
+            if (!context.Ingredients.Any(i => i.UserId == userId))
             {
                 var ingredients = new Ingredient[]
                 {
-                    new Ingredient { Id = 1, Name = "Мука пшеничная", Unit = "г" },
-                    new Ingredient { Id = 2, Name = "Мука ржаная", Unit = "г" },
-                    new Ingredient { Id = 3, Name = "Сахар", Unit = "г" },
-                    new Ingredient { Id = 4, Name = "Соль", Unit = "г" },
-                    new Ingredient { Id = 5, Name = "Сода", Unit = "г" },
-                    new Ingredient { Id = 6, Name = "Разрыхлитель", Unit = "г" },
-                    new Ingredient { Id = 7, Name = "Крахмал", Unit = "г" },
-                    new Ingredient { Id = 8, Name = "Макароны", Unit = "г" },
-                    new Ingredient { Id = 9, Name = "Рис", Unit = "г" },
-                    new Ingredient { Id = 10, Name = "Гречка", Unit = "г" },
-                    new Ingredient { Id = 11, Name = "Овсянка", Unit = "г" },
-                    new Ingredient { Id = 12, Name = "Манка", Unit = "г" },
-                    new Ingredient { Id = 13, Name = "Перец черный молотый", Unit = "г" },
-                    new Ingredient { Id = 14, Name = "Паприка", Unit = "г" },
-                    new Ingredient { Id = 15, Name = "Корица молотая", Unit = "г" },
-                    new Ingredient { Id = 16, Name = "Ванилин", Unit = "г" },
-                    new Ingredient { Id = 17, Name = "Кориандр", Unit = "г" },
-                    new Ingredient { Id = 18, Name = "Куркума", Unit = "г" },
-                    new Ingredient { Id = 19, Name = "Сыр твердый", Unit = "г" },
-                    new Ingredient { Id = 20, Name = "Творог", Unit = "г" },
-                    new Ingredient { Id = 21, Name = "Масло сливочное", Unit = "г" },
-                    new Ingredient { Id = 22, Name = "Куриное филе", Unit = "г" },
-                    new Ingredient { Id = 23, Name = "Фарш говяжий", Unit = "г" },
-                    new Ingredient { Id = 24, Name = "Свинина", Unit = "г" },
-                    new Ingredient { Id = 25, Name = "Говядина", Unit = "г" },
-                    new Ingredient { Id = 26, Name = "Рыбное филе", Unit = "г" },
-                    new Ingredient { Id = 27, Name = "Лук репчатый", Unit = "г" },
-                    new Ingredient { Id = 28, Name = "Чеснок", Unit = "г" },
-                    new Ingredient { Id = 29, Name = "Картофель", Unit = "г" },
-                    new Ingredient { Id = 30, Name = "Морковь", Unit = "г" },
-                    new Ingredient { Id = 31, Name = "Помидоры", Unit = "г" },
-                    new Ingredient { Id = 32, Name = "Огурцы", Unit = "г" },
-                    new Ingredient { Id = 33, Name = "Перец болгарский", Unit = "г" },
-                    new Ingredient { Id = 34, Name = "Кабачок", Unit = "г" },
-                    new Ingredient { Id = 35, Name = "Баклажан", Unit = "г" },
-                    new Ingredient { Id = 36, Name = "Укроп", Unit = "г" },
-                    new Ingredient { Id = 37, Name = "Петрушка", Unit = "г" },
-                    new Ingredient { Id = 38, Name = "Молоко", Unit = "мл" },
-                    new Ingredient { Id = 39, Name = "Сливки", Unit = "мл" },
-                    new Ingredient { Id = 40, Name = "Сметана", Unit = "мл" },
-                    new Ingredient { Id = 41, Name = "Кефир", Unit = "мл" },
-                    new Ingredient { Id = 42, Name = "Масло подсолнечное", Unit = "мл" },
-                    new Ingredient { Id = 43, Name = "Масло оливковое", Unit = "мл" },
-                    new Ingredient { Id = 44, Name = "Уксус", Unit = "мл" },
-                    new Ingredient { Id = 45, Name = "Соевый соус", Unit = "мл" },
-                    new Ingredient { Id = 46, Name = "Томатная паста", Unit = "мл" },
-                    new Ingredient { Id = 47, Name = "Майонез", Unit = "мл" },
-                    new Ingredient { Id = 48, Name = "Кетчуп", Unit = "мл" },
-                    new Ingredient { Id = 49, Name = "Горчица", Unit = "мл" },
-                    new Ingredient { Id = 50, Name = "Яйца", Unit = "шт" },
-                    new Ingredient { Id = 51, Name = "Яблоки", Unit = "г" },
-                    new Ingredient { Id = 52, Name = "Салат листовой", Unit = "г" },
-                    new Ingredient { Id = 53, Name = "Мята", Unit = "г" },
-                    new Ingredient { Id = 54, Name = "Шоколад темный", Unit = "г" },
-                    new Ingredient { Id = 55, Name = "Сахарная пудра", Unit = "г" },
-                    new Ingredient { Id = 56, Name = "Курица целая", Unit = "шт" },
-                    new Ingredient { Id = 57, Name = "Розмарин", Unit = "г" },
-                    new Ingredient { Id = 58, Name = "Лимон", Unit = "г" },
-                    new Ingredient { Id = 59, Name = "Маринованные огурцы", Unit = "г" },
-                    new Ingredient { Id = 60, Name = "Зеленый лук", Unit = "г" },
-                    new Ingredient { Id = 61, Name = "Булочки для бургеров", Unit = "шт" },
-                    new Ingredient { Id = 62, Name = "Вода", Unit = "мл" },
-                    new Ingredient { Id = 63, Name = "Ананас", Unit = "г" },
-                    new Ingredient { Id = 64, Name = "Шампиньоны", Unit = "г" },
-                    new Ingredient { Id = 65, Name = "Базилик", Unit = "г" },
-                    new Ingredient { Id = 66, Name = "Моцарелла", Unit = "г" },
-                    new Ingredient { Id = 67, Name = "Уксус бальзамический", Unit = "мл" },
-                    new Ingredient { Id = 68, Name = "Лосось копченый", Unit = "г" },
-                    new Ingredient { Id = 69, Name = "Сыр сливочный", Unit = "г" },
-                    new Ingredient { Id = 70, Name = "Хлеб ржаной", Unit = "г" },
-                    new Ingredient { Id = 71, Name = "Каперсы", Unit = "г" },
-                    new Ingredient { Id = 72, Name = "Кунжут", Unit = "г" },
-                    new Ingredient { Id = 73, Name = "Имбирь свежий", Unit = "г" },
-                    new Ingredient { Id = 74, Name = "Мед", Unit = "г" },
-                    new Ingredient { Id = 75, Name = "Черника", Unit = "г" },
-                    new Ingredient { Id = 76, Name = "Малина", Unit = "г" },
-                    new Ingredient { Id = 77, Name = "Банан", Unit = "г" },
-                    new Ingredient { Id = 78, Name = "Клубника", Unit = "г" },
-                    new Ingredient { Id = 79, Name = "Вяленые томаты", Unit = "г" },
+                    new Ingredient { Name = "Мука пшеничная", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Мука ржаная", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Сахар", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Соль", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Сода", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Разрыхлитель", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Крахмал", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Макароны", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Рис", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Гречка", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Овсянка", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Манка", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Перец черный молотый", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Паприка", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Корица молотая", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Ванилин", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Кориандр", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Куркума", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Сыр твердый", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Творог", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Масло сливочное", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Куриное филе", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Фарш говяжий", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Свинина", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Говядина", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Рыбное филе", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Лук репчатый", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Чеснок", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Картофель", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Морковь", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Помидоры", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Огурцы", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Перец болгарский", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Кабачок", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Баклажан", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Укроп", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Петрушка", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Молоко", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Сливки", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Сметана", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Кефир", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Масло подсолнечное", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Масло оливковое", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Уксус", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Соевый соус", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Томатная паста", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Майонез", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Кетчуп", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Горчица", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Яйца", Unit = "шт", UserId = userId },
+                    new Ingredient { Name = "Яблоки", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Салат листовой", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Мята", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Шоколад темный", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Сахарная пудра", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Курица целая", Unit = "шт", UserId = userId },
+                    new Ingredient { Name = "Розмарин", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Лимон", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Маринованные огурцы", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Зеленый лук", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Булочки для бургеров", Unit = "шт", UserId = userId },
+                    new Ingredient { Name = "Вода", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Ананас", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Шампиньоны", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Базилик", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Моцарелла", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Уксус бальзамический", Unit = "мл", UserId = userId },
+                    new Ingredient { Name = "Лосось копченый", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Сыр сливочный", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Хлеб ржаной", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Каперсы", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Кунжут", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Имбирь свежий", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Мед", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Черника", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Малина", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Банан", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Клубника", Unit = "г", UserId = userId },
+                    new Ingredient { Name = "Вяленые томаты", Unit = "г", UserId = userId }
                 };
 
                 context.Ingredients.AddRange(ingredients);
                 context.SaveChanges();
-            }
 
-            if (!context.Recipes.Any())
-            {
+                var ingredientDict = ingredients.ToDictionary(i => i.Name, i => i);
+
                 var recipes = new Recipe[]
                 {
                     new Recipe
                     {
-                        Id = 1,
                         Name = "Яблочный крамбл",
-
                         Description = "Классический британский десерт с нежными печеными яблоками и хрустящей " +
                             "песочной крошкой. Готовится проще пирога, а получается не менее вкусно!",
-
                         CookingTime = 60,
-
                         Instructions = "Разогрейте духовку до 190°C. Форму для запекания смажьте маслом.\n\n" +
                             "Яблоки очистите от кожуры и сердцевины, нарежьте кубиками или дольками.\n\n" +
                             "Смешайте яблоки с сахаром (50 г) и корицей. Выложите в форму для запекания.\n\n" +
@@ -119,28 +138,23 @@ namespace MealPlanner.Data
                             "Равномерно посыпьте яблочную начинку крошкой.\n\n" +
                             "Выпекайте 30-35 минут до золотистого цвета крошки и мягкости яблок.\n\n" +
                             "Подавайте теплым, можно с шариком ванильного мороженого или взбитыми сливками.",
-
                         ImagePath = "/uploads/recipes/apple-crumble-pie.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 1, IngredientId = 51, Amount = 500 },
-                            new RecipeIngredient { RecipeId = 1, IngredientId = 3, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 1, IngredientId = 21, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 1, IngredientId = 15, Amount = 4 },
-                            new RecipeIngredient { RecipeId = 1, IngredientId = 1, Amount = 150 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Яблоки"], Amount = 500 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Корица молотая"], Amount = 12 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 150 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 2,
                         Name = "Тайский салат с говядиной",
-
                         Description = "Освежающий азиатский салат с сочной говядиной, свежими овощами и пряной " +
                             "заправкой. Идеальное сочетание теплого мяса и хрустящих овощей.",
-
                         CookingTime = 30,
-
                         Instructions = "Подготовьте все ингредиенты для салата. Говядину нарежьте тонкими ломтиками " +
                             "поперек волокон.\n\n" +
                             "Разогрейте сковороду-гриль или обычную сковороду на сильном огне. Обжарьте говядину по 2-3 " +
@@ -157,36 +171,31 @@ namespace MealPlanner.Data
                             "перед подачей.\n\n" +
                             "Аккуратно перемешайте салат прямо в тарелке, чтобы заправка равномерно распределилась по всем " +
                             "ингредиентам. Подавайте, пока мясо еще теплое.",
-
                         ImagePath = "/uploads/recipes/thai-beef-salad.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 25, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 32, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 31, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 27, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 45, Amount = 40 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 43, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 44, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 3, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 13, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 4, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 37, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 52, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 2, IngredientId = 53, Amount = 15 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Говядина"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Огурцы"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Помидоры"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лук репчатый"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соевый соус"], Amount = 40 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло оливковое"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Уксус"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Петрушка"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Салат листовой"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мята"], Amount = 15 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 3,
                         Name = "Шоколадный фондан",
-
                         Description = "Изысканный французский десерт с хрустящей корочкой и жидкой шоколадной " +
                             "начинкой внутри. Главный секрет - точное время выпекания, чтобы центр остался тягучим.",
-
                         CookingTime = 35,
-
                         Instructions = "Разогрейте духовку до 200°C. Формочки для кексов щедро смажьте сливочным маслом " +
                             "и присыпьте какао или мукой, чтобы десерт легко вынимался.\n\n" +
                             "Темный шоколад поломайте на кусочки и вместе со сливочным маслом растопите на водяной бане " +
@@ -204,30 +213,25 @@ namespace MealPlanner.Data
                             "на тарелку, слегка постучав по дну формочки.\n\n" +
                             "Посыпьте десерт сахарной пудрой через мелкое сито и подавайте. Идеально сочетается с шариком " +
                             "ванильного мороженого или свежими ягодами.",
-
                         ImagePath = "/uploads/recipes/chocolate-fondant.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 54, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 21, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 50, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 3, Amount = 80 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 1, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 4, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 3, IngredientId = 55, Amount = 10 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Шоколад темный"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Яйца"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 80 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахарная пудра"], Amount = 10 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 4,
                         Name = "Запеченная курица с картофелем и розмарином",
-
                         Description = "Классическое блюдо для уютного семейного ужина. Сочная курица с хрустящей " +
                             "золотистой корочкой, запеченная вместе с молодым картофелем, чесноком, лимоном и ароматным розмарином.",
-
                         CookingTime = 90,
-
                         Instructions = "Духовку разогрейте до 200°C. Курицу тщательно промойте под холодной водой и обсушите " +
                             "бумажными полотенцами - это ключ к хрустящей золотистой корочке.\n\n" +
                             "Приготовьте ароматную смесь для натирания. В небольшой миске смешайте соль, черный перец, паприку " +
@@ -246,32 +250,27 @@ namespace MealPlanner.Data
                             "до готовности. За 10 минут до конца снимите фольгу, чтобы корочка стала хрустящей.\n\n" +
                             "Достаньте курицу из духовки и дайте ей отдохнуть 10-15 минут перед разделкой - это позволит сокам " +
                             "равномерно распределиться по мясу. Подавайте прямо в сковороде, украсив дольками лимона и свежим розмарином.",
-
                         ImagePath = "/uploads/recipes/lemon-rosemary-chicken.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 56, Amount = 1 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 29, Amount = 800 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 43, Amount = 60 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 4, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 13, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 14, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 28, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 57, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 4, IngredientId = 58, Amount = 100 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Курица целая"], Amount = 1 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Картофель"], Amount = 800 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло оливковое"], Amount = 60 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Паприка"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Чеснок"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Розмарин"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лимон"], Amount = 100 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 5,
                         Name = "Хрустящий куриный бургер в стиле Нэшвилл",
-
                         Description = "Сочная курица в хрустящей панировке с острой глазурью, маринованными " +
                             "огурчиками и фирменным соусом на булочке бриошь. Американский фастфуд домашнего приготовления!",
-
                         CookingTime = 40,
-
                         Instructions = "Подготовьте куриное филе. Если куски слишком толстые, слегка отбейте их через " +
                             "пищевую пленку до равномерной толщины около 2 см. Посолите и поперчите с обеих сторон.\n\n" +
                             "В глубокой миске взбейте яйца с молоком. В отдельной широкой тарелке смешайте муку, соль, " +
@@ -291,38 +290,33 @@ namespace MealPlanner.Data
                             "зеленым луком.\n\n" +
                             "Накройте верхней половинкой булочки. Подавайте немедленно, пока курица еще горячая и хрустящая, " +
                             "с дополнительными овощами или картофелем фри.",
-
                         ImagePath = "/uploads/recipes/nashville-chicken-burger.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 22, Amount = 400 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 1, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 50, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 38, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 42, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 4, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 13, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 14, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 18, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 47, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 48, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 49, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 59, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 60, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 5, IngredientId = 61, Amount = 2 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Куриное филе"], Amount = 400 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Яйца"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Молоко"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло подсолнечное"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Паприка"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Куркума"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Майонез"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кетчуп"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Горчица"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Маринованные огурцы"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Зеленый лук"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Булочки для бургеров"], Amount = 2 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 6,
                         Name = "BBQ пицца с курицей и ананасом",
-
                         Description = "Сочная домашняя пицца с нежным куриным филе, сладким ананасом, красным " +
                             "луком и ароматным соусом барбекю. Идеальный баланс вкусов для любителей гавайской пиццы!",
-
                         CookingTime = 60,
-
                         Instructions = "Приготовьте тесто для пиццы. В глубокой миске смешайте просеянную муку, " +
                             "соль и разрыхлитель. Постепенно влейте теплую воду и оливковое масло. Замесите " +
                             "эластичное тесто в течение 8-10 минут. Накройте полотенцем и оставьте в теплом месте " +
@@ -346,39 +340,34 @@ namespace MealPlanner.Data
                             "проверяйте по корочке - она должна стать хрустящей и подрумяниться.\n\n" +
                             "Готовую пиццу достаньте из духовки, дайте отдохнуть 2-3 минуты. Посыпьте свежим кориандром, " +
                             "нарежьте на кусочки и подавайте горячей.",
-
                         ImagePath = "/uploads/recipes/bbq-chicken-pizza.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 1, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 4, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 6, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 43, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 62, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 22, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 19, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 46, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 3, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 44, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 49, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 14, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 13, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 27, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 63, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 6, IngredientId = 17, Amount = 10 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Разрыхлитель"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло оливковое"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вода"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Куриное филе"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сыр твердый"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Томатная паста"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Уксус"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Горчица"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Паприка"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лук репчатый"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Ананас"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кориандр"], Amount = 10 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 7,
                         Name = "Феттучини Альфредо с курицей и грибами",
-
                         Description = "Нежная итальянская паста в сливочном соусе с сочными кусочками куриного филе " +
                             "и ароматными шампиньонами. Классическое блюдо, которое готовится за 25 минут и покоряет с первого кусочка.",
-
                         CookingTime = 35,
-
                         Instructions = "Поставьте большую кастрюлю с подсоленной водой на сильный огонь и доведите до " +
                             "кипения. Отварите феттучини согласно инструкции на упаковке до состояния аль денте " +
                             "(обычно 8-10 минут). Перед сливом воды оставьте полстакана крахмальной воды от варки.\n\n" +
@@ -397,33 +386,28 @@ namespace MealPlanner.Data
                             "соусом. Если соус слишком густой, добавьте немного воды от варки пасты.\n\n" +
                             "Подавайте немедленно, посыпав оставшимся сыром и свежей петрушкой. Можно добавить щепотку " +
                             "черного перца сверху.",
-
                         ImagePath = "/uploads/recipes/fettuccine-alfredo.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 8, Amount = 400 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 22, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 64, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 39, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 19, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 21, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 28, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 4, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 13, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 7, IngredientId = 37, Amount = 10 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Макароны"], Amount = 400 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Куриное филе"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Шампиньоны"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сливки"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сыр твердый"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Чеснок"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Петрушка"], Amount = 10 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 8,
                         Name = "Острый томатный суп с говядиной",
-
                         Description = "Насыщенный, пряный суп с нежной говядиной, рисом и ароматными специями. " +
                             "Подается с долькой лимона и свежей зеленью - идеальное согревающее блюдо для прохладного дня.",
-
                         CookingTime = 90,
-
                         Instructions = "Говядину промойте, нарежьте небольшими кубиками по 2-3 см. В кастрюле с " +
                             "толстым дном разогрейте подсолнечное масло и обжарьте мясо на сильном огне до румяной " +
                             "корочки со всех сторон, около 5-7 минут.\n\n" +
@@ -442,36 +426,31 @@ namespace MealPlanner.Data
                             "не объединятся. Попробуйте на соль и остроту, при необходимости добавьте специи.\n\n" +
                             "Разлейте горячий суп по глубоким тарелкам. В каждую порцию добавьте дольку лимона, " +
                             "щедро посыпьте свежей петрушкой. Подавайте немедленно с лепешкой или свежим хлебом.",
-
                         ImagePath = "/uploads/recipes/tomato-beef-soup.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 25, Amount = 400 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 9, Amount = 80 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 27, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 28, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 46, Amount = 60 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 42, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 4, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 13, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 17, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 14, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 37, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 58, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 8, IngredientId = 62, Amount = 1500 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Говядина"], Amount = 400 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Рис"], Amount = 80 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лук репчатый"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Чеснок"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Томатная паста"], Amount = 60 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло подсолнечное"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кориандр"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Паприка"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Петрушка"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лимон"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вода"], Amount = 1500 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 9,
                         Name = "Стейк из говядины с картофельным пюре и овощами",
-
                         Description = "Сочный стейк из говядины с идеальной прожаркой, поданный с нежным картофельным " +
                             "пюре и овощами на пару. Классическое сочетание для сытного ужина.",
-                        
                         CookingTime = 40,
-
                         Instructions = "Картофель очистите, нарежьте крупными кусками и отварите в подсоленной воде " +
                             "до готовности, около 20 минут. Слейте воду.\n\n" +
                             "Пока варится картофель, подготовьте стейк. Говядину промокните бумажными полотенцами, " +
@@ -491,39 +470,34 @@ namespace MealPlanner.Data
                             "Для соуса смешайте томатную пасту, соевый соус, горчицу, немного сахара и воды. Проварите " +
                             "2-3 минуты до загустения.\n\n" +
                             "Подавайте стейк с картофельным пюре, овощами и соусом. Украсьте свежей петрушкой.",
-
                         ImagePath = "/uploads/recipes/beef-steak-mashed.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 25, Amount = 350 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 29, Amount = 500 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 30, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 34, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 38, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 21, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 43, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 46, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 45, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 49, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 3, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 4, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 13, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 57, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 37, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 9, IngredientId = 62, Amount = 3000 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Говядина"], Amount = 350 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Картофель"], Amount = 500 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Морковь"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кабачок"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Молоко"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло оливковое"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Томатная паста"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соевый соус"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Горчица"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Розмарин"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Петрушка"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вода"], Amount = 3000 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 10,
                         Name = "Салат Капрезе",
-
                         Description = "Итальянская классика: сочные томаты, нежная моцарелла, ароматный базилик " +
                             "и бальзамический уксус. Простота и изысканность в одной тарелке.",
-                        
                         CookingTime = 15,
-
                         Instructions = "Выберите спелые, но плотные томаты. Хорошо помойте их и обсушите бумажным " +
                             "полотенцем. Нарежьте помидоры кружочками толщиной около 5-7 мм.\n\n" +
                             "Сыр также нарежьте кружочками такой же толщины, как и помидоры. Если сыр слишком " +
@@ -538,30 +512,25 @@ namespace MealPlanner.Data
                             "Украсьте салат свежими листьями базилика, распределив их между ломтиками помидоров и сыра.\n\n" +
                             "Подавайте салат Капрезе сразу после приготовления, пока томаты и сыр не пустили сок. Идеально " +
                             "сочетается с хрустящим багетом или чиабаттой.",
-
                         ImagePath = "/uploads/recipes/caprese.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 31, Amount = 400 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 66, Amount = 250 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 65, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 43, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 4, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 13, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 10, IngredientId = 67, Amount = 15 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Помидоры"], Amount = 400 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Моцарелла"], Amount = 250 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Базилик"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло оливковое"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Уксус бальзамический"], Amount = 15 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 11,
                         Name = "Брускетта с лососем и сливочным сыром",
-
                         Description = "Изысканная закуска с нежным сливочным сыром, слабосоленым лососем и свежим " +
                             "укропом. Идеально для завтрака или легкого перекуса.",
-                        
                         CookingTime = 10,
-
                         Instructions = "Подготовьте все ингредиенты. Лосось достаньте из холодильника за 5-10 минут " +
                             "до подачи, чтобы он немного согрелся и раскрыл вкус.\n\n" +
                             "Хлеб нарежьте ломтиками толщиной около 1 см. Если используете багет или чиабатту, " +
@@ -582,30 +551,25 @@ namespace MealPlanner.Data
                             "Украсьте каждую брускетту тонким ломтиком лимона или долькой. Лимон не только украшает, " +
                             "но и помогает сбалансировать жирность лосося.\n\n" +
                             "Подавайте немедленно, пока хлеб еще теплый и хрустящий.",
-                        
                         ImagePath = "/uploads/recipes/salmon-bruschetta.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 70, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 68, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 69, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 36, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 58, Amount = 50 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 71, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 11, IngredientId = 28, Amount = 5 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Хлеб ржаной"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лосось копченый"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сыр сливочный"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Укроп"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лимон"], Amount = 50 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Каперсы"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Чеснок"], Amount = 5 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 12,
                         Name = "Курица терияки с рисом",
-
                         Description = "Сочные кусочки куриного филе в густом глянцевом соусе терияки, поданные на " +
                             "рассыпчатом рисе. Быстрое и невероятно вкусное блюдо в японском стиле.",
-                        
                         CookingTime = 40,
-
                         Instructions = "Рис тщательно промойте в нескольких водах, пока вода не станет прозрачной. " +
                             "Залейте холодной водой в соотношении 1:2, доведите до кипения, убавьте огонь до минимума, " +
                             "накройте крышкой и варите 15-20 минут до полного впитывания воды. Снимите с огня и дайте " +
@@ -629,36 +593,31 @@ namespace MealPlanner.Data
                             "курицу в соусе терияки, полейте оставшимся соусом со сковороды.\n\n" +
                             "Посыпьте блюдо семенами кунжута и мелко нарезанным зеленым луком. Подавайте немедленно, пока " +
                             "курица горячая, а соус блестит.",
-                        
                         ImagePath = "/uploads/recipes/chicken-teriyaki.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 22, Amount = 500 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 9, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 45, Amount = 80 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 3, Amount = 40 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 28, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 7, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 62, Amount = 1000 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 60, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 42, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 4, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 72, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 73, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 12, IngredientId = 74, Amount = 30 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Куриное филе"], Amount = 500 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Рис"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соевый соус"], Amount = 80 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 40 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Чеснок"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Крахмал"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вода"], Amount = 1000 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Зеленый лук"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло подсолнечное"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кунжут"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Имбирь свежий"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мед"], Amount = 30 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 13,
                         Name = "Чизкейк с черничным топпингом",
-
                         Description = "Нежный сливочный чизкейк на хрустящей песочной основе с ярким черничным " +
                             "соусом. Классический американский десерт, который покорит любое сердце.",
-                        
                         CookingTime = 90,
-
                         Instructions = "Разогрейте духовку до 160°C. Форму для выпечки (диаметром 20-22 см) смажьте " +
                             "маслом и застелите дно пергаментом.\n\n" +
                             "Приготовьте основу для чизкейка. В миске смешайте измельченное в крошку песочное печенье " +
@@ -683,33 +642,28 @@ namespace MealPlanner.Data
                             "Остудите топпинг до комнатной температуры. Перед подачей аккуратно распределите черничный " +
                             "соус по поверхности чизкейка. Нарежьте горячим ножом (ополосните его в кипятке перед " +
                             "каждым разрезом) и подавайте.",
-                        
                         ImagePath = "/uploads/recipes/blueberry-cheesecake.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 1, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 3, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 21, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 69, Amount = 600 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 50, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 16, Amount = 10 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 58, Amount = 180 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 75, Amount = 300 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 7, Amount = 15 },
-                            new RecipeIngredient { RecipeId = 13, IngredientId = 4, Amount = 2 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сыр сливочный"], Amount = 600 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Яйца"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Ванилин"], Amount = 10 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Лимон"], Amount = 180 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Черника"], Amount = 300 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Крахмал"], Amount = 15 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 2 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 14,
                         Name = "Ягодный смузи с бананом",
-
                         Description = "Густой, насыщенный и полезный смузи из свежих ягод и спелого банана. Идеальный " +
                             "завтрак или перекус, который заряжает энергией и витаминами на весь день.",
-                        
                         CookingTime = 5,
-
                         Instructions = "Подготовьте все ингредиенты. Банан очистите от кожуры и нарежьте крупными " +
                             "кусками. Если ягоды замороженные, дайте им постоять при комнатной температуре 5-10 минут, " +
                             "чтобы они слегка оттаяли.\n\n" +
@@ -724,28 +678,23 @@ namespace MealPlanner.Data
                             "Попробуйте смузи на вкус. Если нужно, добавьте еще немного меда или ягод и взбейте еще раз.\n\n" +
                             "Перелейте готовый смузи в высокий стакан. Подавайте немедленно, пока напиток холодный " +
                             "и свежий. Можно украсить сверху несколькими целыми ягодами или долькой банана.",
-                        
                         ImagePath = "/uploads/recipes/berry-smoothie.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 14, IngredientId = 76, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 14, IngredientId = 75, Amount = 100 },
-                            new RecipeIngredient { RecipeId = 14, IngredientId = 77, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 14, IngredientId = 41, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 14, IngredientId = 74, Amount = 20 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Малина"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Черника"], Amount = 100 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Банан"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кефир"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мед"], Amount = 20 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 15,
                         Name = "Блины с бананами и клубникой",
-
                         Description = "Нежные тонкие блинчики со свежими бананами, клубникой и шоколадной глазурью. " +
                             "Идеальный завтрак или десерт для особого случая.",
-                       
                         CookingTime = 40,
-
                         Instructions = "В глубокой миске смешайте муку, сахар и соль. Сделайте углубление в центре.\n\n" +
                             "В отдельной посуде взбейте яйца с молоком до однородности. Постепенно влейте " +
                             "яично-молочную смесь в муку, постоянно помешивая венчиком, чтобы не было комков.\n\n" +
@@ -765,33 +714,28 @@ namespace MealPlanner.Data
                             "Растопите темный шоколад на водяной бане или в микроволновке (импульсами по 15 секунд, " +
                             "помешивая).\n\n" +
                             "Полейте готовые блины растопленным шоколадом. Подавайте сразу, пока блины еще теплые.",
-                        
                         ImagePath = "/uploads/recipes/crepes-banana-strawberry.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 1, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 38, Amount = 500 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 50, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 3, Amount = 40 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 4, Amount = 3 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 21, Amount = 40 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 77, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 78, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 15, IngredientId = 54, Amount = 50 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Мука пшеничная"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Молоко"], Amount = 500 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Яйца"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сахар"], Amount = 40 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 3 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 40 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Банан"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Клубника"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Шоколад темный"], Amount = 50 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 16,
                         Name = "Горячие тосты с сыром и вялеными томатами",
-
                         Description = "Простая, но невероятно вкусная закуска из хрустящего ржаного хлеба с тягучим " +
                             "расплавленным сыром и ароматными вялеными томатами. Готовится за 10 минут и идеально " +
                             "подходит для завтрака или легкого перекуса.",
-                        
                         CookingTime = 15,
-
                         Instructions = "Духовку разогрейте до 200°C. Если есть функция гриля - используйте ее, это " +
                             "даст красивую золотистую корочку на сыре.\n\n" +
                             "Ржаной хлеб нарежьте ломтиками толщиной около 1 сантиметра. Если хлеб уже нарезан - " +
@@ -811,28 +755,23 @@ namespace MealPlanner.Data
                             "Готовые тосты достаньте из духовки и дайте им остыть буквально 1-2 минуты - сыр немного " +
                             "схватится и не будет стекать при первом укусе. Подавайте горячими, сразу после приготовления, " +
                             "с чашкой ароматного чая или кофе.",
-                        
                         ImagePath = "/uploads/recipes/cheese-toasts.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 16, IngredientId = 70, Amount = 350 },
-                            new RecipeIngredient { RecipeId = 16, IngredientId = 19, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 16, IngredientId = 79, Amount = 60 },
-                            new RecipeIngredient { RecipeId = 16, IngredientId = 21, Amount = 20 },
-                            new RecipeIngredient { RecipeId = 16, IngredientId = 13, Amount = 2 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Хлеб ржаной"], Amount = 350 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Сыр твердый"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вяленые томаты"], Amount = 60 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Масло сливочное"], Amount = 20 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Перец черный молотый"], Amount = 2 }
                         }
                     },
                     new Recipe
                     {
-                        Id = 17,
                         Name = "Овсянка с черникой и медом",
-
                         Description = "Полезный и невероятно вкусный завтрак с нежной овсяной кашей, ароматным " +
                             "черничным соусом и свежими ягодами. Готовится за 15 минут и заряжает энергией на всё утро.",
-                        
                         CookingTime = 15,
-
                         Instructions = "В небольшой кастрюле смешайте овсяные хлопья, молоко и щепотку соли. " +
                             "Поставьте на средний огонь и доведите до кипения, периодически помешивая деревянной " +
                             "ложкой, чтобы каша не пригорела ко дну.\n\n" +
@@ -852,18 +791,17 @@ namespace MealPlanner.Data
                             "В завершение посыпьте овсянку кунжутом - он добавит приятный ореховый аромат и " +
                             "интересный хруст. Подавайте немедленно, пока каша горячая, а соус еще теплый. Отлично " +
                             "сочетается со стаканом холодного молока или свежезаваренным чаем.",
-                        
                         ImagePath = "/uploads/recipes/oatmeal-blueberry.jpg",
-
+                        UserId = userId,
                         RecipeIngredients = new List<RecipeIngredient>
                         {
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 11, Amount = 80 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 38, Amount = 200 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 75, Amount = 150 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 74, Amount = 30 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 4, Amount = 2 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 72, Amount = 5 },
-                            new RecipeIngredient { RecipeId = 17, IngredientId = 62, Amount = 50 }
+                            new RecipeIngredient { Ingredient = ingredientDict["Овсянка"], Amount = 80 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Молоко"], Amount = 200 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Черника"], Amount = 150 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Мед"], Amount = 30 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Соль"], Amount = 2 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Кунжут"], Amount = 5 },
+                            new RecipeIngredient { Ingredient = ingredientDict["Вода"], Amount = 50 }
                         }
                     }
                 };

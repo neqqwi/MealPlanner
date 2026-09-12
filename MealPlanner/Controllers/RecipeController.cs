@@ -1,23 +1,23 @@
 ﻿using MealPlanner.Data;
 using MealPlanner.Models;
 using MealPlanner.ViewModels;
-using MealPlanner.ViewModels.Ingredient;
 using MealPlanner.ViewModels.Recipe;
 using MealPlanner.ViewModels.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using System.Security.Claims;
 
 namespace MealPlanner.Controllers
 {
+    [Authorize]
     public class RecipeController : Controller
     {
-        private const int MaxFileSize = 5 * 1024 * 1024; // 5MB
         private const int ImageSize = 640;
         private const string DefaultNoImagePath = "/images/no-image.svg";
-        private static readonly string[] AllowedImageExtensions = [".jpg", ".jpeg", ".png"];
 
         private readonly AppDbContext _context;
         private readonly ILogger<RecipeController> _logger;
@@ -28,9 +28,25 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 8, string? searchTerm = null)
+        private string GetCurrentUserId()
         {
-            IQueryable<Recipe> query = _context.Recipes.OrderByDescending(r => r.Id);
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                return User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+
+            return AppConstants.DemoUserId;
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 8, 
+            string? searchTerm = null)
+        {
+            string currentUserId = GetCurrentUserId();
+
+            IQueryable<Recipe> query = _context.Recipes
+                .Where(r => r.UserId == currentUserId)
+                .OrderByDescending(r => r.Id);
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
@@ -59,6 +75,25 @@ namespace MealPlanner.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+        {
+            string currentUserId = GetCurrentUserId();
+
+            var recipe = await _context.Recipes
+                .Include(r => r.RecipeIngredients)
+                .ThenInclude(ri => ri.Ingredient)
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
+
+            if (recipe == null)
+            {
+                return NotFound();
+            }
+
+            return View(recipe);
         }
 
         [HttpGet]
@@ -91,13 +126,13 @@ namespace MealPlanner.Controllers
                 {
                     var ext = Path.GetExtension(viewModel.ImageFile.FileName).ToLowerInvariant();
 
-                    if (!AllowedImageExtensions.Contains(ext))
+                    if (!AppConstants.AllowedImageExtensions.Contains(ext))
                     {
                         ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
                         return await ReturnViewWithIngredients(viewModel, cancellationToken);
                     }
 
-                    if (viewModel.ImageFile.Length > MaxFileSize)
+                    if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
                     {
                         ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
                         return await ReturnViewWithIngredients(viewModel, cancellationToken);
@@ -132,12 +167,13 @@ namespace MealPlanner.Controllers
 
                 var recipe = new Recipe
                 {
+                    UserId = GetCurrentUserId(),
                     Name = viewModel.Name,
                     Description = viewModel.Description,
                     CookingTime = viewModel.CookingTime,
                     Instructions = viewModel.Instructions?.Trim(),
                     ImagePath = imagePath,
-                    RecipeIngredients = []
+                    RecipeIngredients = new List<RecipeIngredient>()
                 };
 
                 var addedIngredients = new HashSet<int>();
@@ -184,58 +220,19 @@ namespace MealPlanner.Controllers
             }
         }
 
-        private async Task<List<SelectListItem>> GetIngredientsListAsync(CancellationToken cancellationToken)
-        {
-            return await _context.Ingredients
-                .OrderBy(i => i.Name)
-                .Select(i => new SelectListItem
-                {
-                    Value = i.Id.ToString(),
-                    Text = $"{i.Name} ({i.Unit})"
-                })
-                .ToListAsync(cancellationToken);
-        }
-
-        private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel, CancellationToken cancellationToken)
-        {
-            viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
-            return View("Create", viewModel);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
-        {
-            var recipe = await _context.Recipes
-                .Include(r => r.RecipeIngredients)
-                .ThenInclude(ri => ri.Ingredient)
-                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
-
-            if (recipe == null)
-            {
-                return NotFound();
-            }
-
-            return View(recipe);
-        }
-
         [HttpGet]
         public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
         {
+            string currentUserId = GetCurrentUserId();
+
             var recipe = await _context.Recipes
                 .Include(r => r.RecipeIngredients)
                     .ThenInclude(ri => ri.Ingredient)
-                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
 
             if (recipe == null) return NotFound();
 
-            var allIngredients = await _context.Ingredients
-                .OrderBy(i => i.Name)
-                .Select(i => new SelectListItem
-                {
-                    Value = i.Id.ToString(),
-                    Text = $"{i.Name} ({i.Unit})"
-                })
-                .ToListAsync(cancellationToken);
+            var allIngredients = await GetIngredientsListAsync(cancellationToken);
 
             var viewModel = new RecipeEditViewModel
             {
@@ -262,40 +259,47 @@ namespace MealPlanner.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
             }
 
             try
             {
+                string currentUserId = GetCurrentUserId();
+
                 var recipe = await _context.Recipes
                     .Include(r => r.RecipeIngredients)
-                    .FirstOrDefaultAsync(r => r.Id == viewModel.Id, cancellationToken);
+                    .FirstOrDefaultAsync(r => r.Id == viewModel.Id && r.UserId == currentUserId, cancellationToken);
 
                 if (recipe == null) return NotFound();
 
                 string oldImagePath = recipe.ImagePath;
-                string newImagePath = viewModel.CurrentImagePath ?? DefaultNoImagePath;
+
+                string newImagePath = DefaultNoImagePath;
+                if (!string.IsNullOrEmpty(viewModel.CurrentImagePath))
+                {
+                    newImagePath = viewModel.CurrentImagePath;
+                }
 
                 if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
                 {
                     var ext = Path.GetExtension(viewModel.ImageFile.FileName).ToLowerInvariant();
 
-                    if (!AllowedImageExtensions.Contains(ext))
+                    if (!AppConstants.AllowedImageExtensions.Contains(ext))
                     {
                         ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                     }
 
-                    if (viewModel.ImageFile.Length > MaxFileSize)
+                    if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
                     {
                         ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                     }
 
                     if (!viewModel.ImageFile.ContentType.StartsWith("image/"))
                     {
                         ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                     }
 
                     var newFileName = Guid.NewGuid().ToString() + ext;
@@ -335,7 +339,7 @@ namespace MealPlanner.Controllers
                         if (!addedIngredients.Add(ingredientVm.IngredientId))
                         {
                             ModelState.AddModelError("", "Один из ингредиентов добавлен в рецепт дважды");
-                            return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                            return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                         }
 
                         recipe.RecipeIngredients.Add(new RecipeIngredient
@@ -349,14 +353,12 @@ namespace MealPlanner.Controllers
                 if (!viewModel.RecipeIngredients.Any(i => i.IngredientId > 0 && i.Amount > 0))
                 {
                     ModelState.AddModelError("", "Добавьте хотя бы один ингредиент");
-                    return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                    return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
 
-                if (!string.IsNullOrEmpty(oldImagePath) &&
-                    oldImagePath != DefaultNoImagePath &&
-                    oldImagePath != newImagePath)
+                if (!string.IsNullOrEmpty(oldImagePath) && oldImagePath != DefaultNoImagePath && oldImagePath != newImagePath)
                 {
                     var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldImagePath.TrimStart('/'));
 
@@ -384,7 +386,7 @@ namespace MealPlanner.Controllers
             {
                 _logger.LogError(ex, "Ошибка при редактировании рецепта '{RecipeName}'", viewModel.Name);
                 ModelState.AddModelError("", "Произошла ошибка при сохранении изменений. Попробуйте еще раз.");
-                return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
             }
         }
 
@@ -396,8 +398,10 @@ namespace MealPlanner.Controllers
                 return NotFound();
             }
 
+            string currentUserId = GetCurrentUserId();
+
             var recipe = await _context.Recipes
-                .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(m => m.Id == id && m.UserId == currentUserId, cancellationToken);
 
             if (recipe == null)
             {
@@ -411,7 +415,10 @@ namespace MealPlanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var recipe = await _context.Recipes.FindAsync(new object?[] { id }, cancellationToken);
+            string currentUserId = GetCurrentUserId();
+
+            var recipe = await _context.Recipes
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
 
             if (recipe != null)
             {
@@ -438,9 +445,12 @@ namespace MealPlanner.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private async Task<IActionResult> ReturnViewWithIngredients(RecipeEditViewModel viewModel, CancellationToken cancellationToken)
+        private async Task<List<SelectListItem>> GetIngredientsListAsync(CancellationToken cancellationToken)
         {
-            viewModel.PossibleRecipeIngredients = await _context.Ingredients
+            string currentUserId = GetCurrentUserId();
+
+            return await _context.Ingredients
+                .Where(i => i.UserId == currentUserId)
                 .OrderBy(i => i.Name)
                 .Select(i => new SelectListItem
                 {
@@ -448,7 +458,19 @@ namespace MealPlanner.Controllers
                     Text = $"{i.Name} ({i.Unit})"
                 })
                 .ToListAsync(cancellationToken);
+        }
 
+        private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel, 
+            CancellationToken cancellationToken)
+        {
+            viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
+            return View("Create", viewModel);
+        }
+
+        private async Task<IActionResult> ReturnViewWithIngredientsEdit(RecipeEditViewModel viewModel, 
+            CancellationToken cancellationToken)
+        {
+            viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
             return View("Edit", viewModel);
         }
     }
