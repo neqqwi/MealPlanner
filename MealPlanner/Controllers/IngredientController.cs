@@ -23,9 +23,9 @@ namespace MealPlanner.Controllers
 
         private string GetCurrentUserId()
         {
-            if (User.Identity != null && User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated == true)
             {
-                return User.FindFirstValue(ClaimTypes.NameIdentifier);
+                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? AppConstants.DemoUserId;
             }
 
             return AppConstants.DemoUserId;
@@ -64,7 +64,7 @@ namespace MealPlanner.Controllers
                 Items = pageResult,
                 CurrentPage = page,
                 TotalPages = totalPages,
-                SearchTerm = searchTerm
+                SearchTerm = searchTerm ?? string.Empty
             };
 
             return View(ingredientList);
