@@ -1,4 +1,4 @@
-﻿namespace MealPlanner.ViewModels.Ingredient
+﻿namespace MealPlanner.ViewModels.Ingredients
 {
     public class IngredientDeleteViewModel
     {

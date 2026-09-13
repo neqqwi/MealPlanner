@@ -1,8 +1,8 @@
 ﻿using MealPlanner.Data;
 using MealPlanner.Models;
 using MealPlanner.ViewModels;
-using MealPlanner.ViewModels.Recipe;
-using MealPlanner.ViewModels.Shared;
+using MealPlanner.ViewModels.Recipes;
+using MealPlanner.ViewModels.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;

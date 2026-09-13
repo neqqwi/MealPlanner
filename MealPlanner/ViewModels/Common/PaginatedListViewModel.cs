@@ -1,6 +1,6 @@
 ﻿using MealPlanner.Models;
 
-namespace MealPlanner.ViewModels.Shared
+namespace MealPlanner.ViewModels.Common
 {
     public class PaginatedListViewModel<T>
     {
