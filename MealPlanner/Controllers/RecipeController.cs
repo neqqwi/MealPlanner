@@ -165,8 +165,7 @@ namespace MealPlanner.Controllers
                     Description = viewModel.Description,
                     CookingTime = viewModel.CookingTime,
                     Instructions = viewModel.Instructions?.Trim(),
-                    ImagePath = imagePath,
-                    RecipeIngredients = new List<RecipeIngredient>()
+                    ImagePath = imagePath
                 };
 
                 var addedIngredients = new HashSet<int>();

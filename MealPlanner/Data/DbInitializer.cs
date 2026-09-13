@@ -27,7 +27,7 @@ namespace MealPlanner.Data
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    throw new Exception($"Не удалось создать демо-пользователя: {errors}");
+                    throw new InvalidOperationException($"Не удалось создать демо-пользователя: {errors}");
                 }
             }
 

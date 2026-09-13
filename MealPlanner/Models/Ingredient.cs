@@ -13,7 +13,7 @@ namespace MealPlanner.Models
         [Required(ErrorMessage = "Выберите единицу измерения")]
         [RegularExpression("^(г|мл)$", ErrorMessage = "Недопустимая единица измерения")]
         public string Unit { get; set; } = string.Empty;
-        public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
+        public ICollection<RecipeIngredient> RecipeIngredients { get; } = new List<RecipeIngredient>();
 
         [Required]
         public string UserId { get; set; } = string.Empty;

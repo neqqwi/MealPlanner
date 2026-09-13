@@ -24,6 +24,6 @@ namespace MealPlanner.ViewModels.Recipe
 
         public IList<RecipeIngredientViewModel> RecipeIngredients { get; set; } = new List<RecipeIngredientViewModel>();
 
-        public IList<SelectListItem> PossibleRecipeIngredients { get; set; } = new List<SelectListItem>();
+        public IList<SelectListItem> PossibleRecipeIngredients { get; set;  } = new List<SelectListItem>();
     }
 }
