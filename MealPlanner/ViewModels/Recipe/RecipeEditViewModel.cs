@@ -25,8 +25,8 @@ namespace MealPlanner.ViewModels.Recipe
         public string? CurrentImagePath { get; set; }
         public IFormFile? ImageFile { get; set; }
 
-        public List<RecipeIngredientViewModel> RecipeIngredients { get; set; } = [];
+        public IList<RecipeIngredientViewModel> RecipeIngredients { get; set; } = new List<RecipeIngredientViewModel>();
 
-        public List<SelectListItem> PossibleRecipeIngredients { get; set; } = [];
+        public IList<SelectListItem> PossibleRecipeIngredients { get; set; } = new List<SelectListItem>();
     }
 }

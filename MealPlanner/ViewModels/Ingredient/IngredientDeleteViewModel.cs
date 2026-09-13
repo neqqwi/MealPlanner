@@ -6,7 +6,7 @@
         public string Name { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
         public int RecipesCount { get; set; }
-        public List<RecipeReference> ExampleRecipes { get; set; } = [];
+        public IReadOnlyList<RecipeReference> ExampleRecipes { get; set; } = new List<RecipeReference>();
     }
     public class RecipeReference
     {

@@ -16,6 +16,16 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -29,19 +39,15 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ошибка при заполнении базы данных начальными данными.");
+        logger.LogCritical(ex, "Критическая ошибка при заполнении базы данных. Приложение не может быть запущено.");
+        throw;
     }
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
 app.UseHttpsRedirection();
-app.UseRouting();
+app.UseRouting(); 
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

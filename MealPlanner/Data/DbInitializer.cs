@@ -9,6 +9,9 @@ namespace MealPlanner.Data
     {
         public static async Task InitializeAsync(AppDbContext context, UserManager<ApplicationUser> userManager)
         {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(userManager);
+
             var demoUser = await userManager.FindByIdAsync(AppConstants.DemoUserId);
             if (demoUser == null)
             {
@@ -32,6 +35,8 @@ namespace MealPlanner.Data
         }
         public static void Initialize(AppDbContext context, string userId)
         {
+            ArgumentNullException.ThrowIfNull(context);
+
             if (!context.Ingredients.Any(i => i.UserId == userId))
             {
                 var ingredients = new Ingredient[]

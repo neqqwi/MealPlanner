@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>5f200a03-2067-443d-ae6d-9307233144ce</UserSecretsId>
 	<AnalysisMode>All</AnalysisMode>
+	<NoWarn>$(NoWarn);CA2007;CA1805;CA1515;CA1849;CA1848</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

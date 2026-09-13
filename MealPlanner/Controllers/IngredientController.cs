@@ -22,8 +22,8 @@ namespace MealPlanner.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 25, 
-            string? searchTerm = null)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 25, string? searchTerm = null, 
+            CancellationToken cancellationToken = default)
         {
             string currentUserId = GetCurrentUserId();
 
@@ -71,6 +71,8 @@ namespace MealPlanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IngredientCreateViewModel viewModel, CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(viewModel);
+
             if (!ModelState.IsValid)
             {
                 return View(viewModel);
@@ -110,16 +112,16 @@ namespace MealPlanner.Controllers
                 _logger.LogWarning("Создание ингредиента '{IngredientName}' было отменено", viewModel.Name);
                 return new StatusCodeResult(499);
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                _logger.LogError(ex, "Ошибка при добавлении ингредиента '{IngredientName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка при сохранении ингредиента. Попробуйте еще раз.");
+                _logger.LogError(dbEx, "Ошибка базы данных при добавлении ингредиента '{IngredientName}'", viewModel.Name);
+                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
                 return View(viewModel);
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(CancellationToken cancellationToken, int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken = default)
         {
             string currentUserId = GetCurrentUserId();
 
@@ -142,6 +144,7 @@ namespace MealPlanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(IngredientEditViewModel viewModel, CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(viewModel);
             if (!ModelState.IsValid)
             {
                 return View(viewModel);
@@ -182,16 +185,16 @@ namespace MealPlanner.Controllers
                 _logger.LogWarning("Редактирование ингредиента '{IngredientName}' было отменено", viewModel.Name);
                 return new StatusCodeResult(499);
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                _logger.LogError(ex, "Ошибка при изменении ингредиента '{IngredientName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка при сохранении изменений. Попробуйте еще раз.");
+                _logger.LogError(dbEx, "Ошибка базы данных при редактировании ингредиента '{IngredientName}'", viewModel.Name);
+                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
                 return View(viewModel);
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Delete(CancellationToken cancellationToken, int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken = default)
         {
             string currentUserId = GetCurrentUserId();
 
@@ -226,46 +229,33 @@ namespace MealPlanner.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        [ActionName("Delete")]
+        public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
         {
-            try
+            string currentUserId = GetCurrentUserId();
+
+            var ingredient = await _context.Ingredients
+                .FirstOrDefaultAsync(i => i.Id == id && i.UserId == currentUserId, cancellationToken);
+
+            if (ingredient == null) return NotFound();
+
+            var recipeUsageQuery = _context.RecipeIngredients
+                .Where(ri => ri.IngredientId == id);
+
+            var recipesCount = await recipeUsageQuery.CountAsync(cancellationToken);
+
+            if (recipesCount > 0)
             {
-                string currentUserId = GetCurrentUserId();
-
-                var ingredient = await _context.Ingredients
-                    .FirstOrDefaultAsync(i => i.Id == id && i.UserId == currentUserId, cancellationToken);
-
-                if (ingredient == null) return NotFound();
-
-                var recipeUsageQuery = _context.RecipeIngredients
-                    .Where(ri => ri.IngredientId == id);
-
-                var recipesCount = await recipeUsageQuery.CountAsync(cancellationToken);
-
-                if (recipesCount > 0)
-                {
-                    TempData["ErrorMessage"] = $"Нельзя удалить ингредиент \"{ingredient.Name} " +
-                        $"({ingredient.Unit})\", так как он используется в {recipesCount} рецептах.";
-                    return RedirectToAction(nameof(Delete), new { id = id });
-                }
-
-                _context.Ingredients.Remove(ingredient);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                TempData["SuccessMessage"] = $"Ингредиент \"{ingredient.Name} ({ingredient.Unit})\" успешно удален.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("Удаление ингредиента с ID {IngredientId} было отменено", id);
-                return new StatusCodeResult(499);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при удалении ингредиента с ID {IngredientId}", id);
-                TempData["ErrorMessage"] = "Произошла ошибка при удалении ингредиента. Попробуйте еще раз.";
+                TempData["ErrorMessage"] = $"Нельзя удалить ингредиент \"{ingredient.Name} " +
+                    $"({ingredient.Unit})\", так как он используется в {recipesCount} рецептах.";
                 return RedirectToAction(nameof(Delete), new { id = id });
             }
+
+            _context.Ingredients.Remove(ingredient);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            TempData["SuccessMessage"] = $"Ингредиент \"{ingredient.Name} ({ingredient.Unit})\" успешно удален.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -29,8 +29,8 @@ namespace MealPlanner.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Index(CancellationToken cancellationToken, int page = 1, int pageSize = 8, 
-            string? searchTerm = null)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 8, string? searchTerm = null, 
+            CancellationToken cancellationToken = default)
         {
             string currentUserId = GetCurrentUserId();
 
@@ -103,6 +103,8 @@ namespace MealPlanner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RecipeCreateViewModel viewModel, CancellationToken cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(viewModel);
+
             if (!ModelState.IsValid)
             {
                 return await ReturnViewWithIngredients(viewModel, cancellationToken);
@@ -202,11 +204,11 @@ namespace MealPlanner.Controllers
                 _logger.LogWarning("Создание рецепта '{RecipeName}' было отменено", viewModel.Name);
                 return new StatusCodeResult(499);
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                _logger.LogError(ex, "Ошибка при создании рецепта '{RecipeName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка при сохранении рецепта. Попробуйте еще раз.");
-                return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                _logger.LogError(dbEx, "Ошибка базы данных при добавлении рецепта '{RecipeName}'", viewModel.Name);
+                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
+                return View(viewModel);
             }
         }
 
@@ -245,8 +247,10 @@ namespace MealPlanner.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(RecipeEditViewModel viewModel, CancellationToken cancellationToken)
+        public async Task<IActionResult> Edit(RecipeEditViewModel viewModel, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(viewModel);
+
             if (!ModelState.IsValid)
             {
                 return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
@@ -372,11 +376,11 @@ namespace MealPlanner.Controllers
                 _logger.LogWarning("Редактирование рецепта '{RecipeName}' было отменено", viewModel.Name);
                 return new StatusCodeResult(499);
             }
-            catch (Exception ex)
+            catch (DbUpdateException dbEx)
             {
-                _logger.LogError(ex, "Ошибка при редактировании рецепта '{RecipeName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка при сохранении изменений. Попробуйте еще раз.");
-                return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+                _logger.LogError(dbEx, "Ошибка базы данных при редактировании рецепта '{RecipeName}'", viewModel.Name);
+                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
+                return View(viewModel);
             }
         }
 
@@ -410,27 +414,29 @@ namespace MealPlanner.Controllers
             var recipe = await _context.Recipes
                 .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
 
-            if (recipe != null)
+            if (recipe == null)
             {
-                if (!string.IsNullOrEmpty(recipe.ImagePath) && recipe.ImagePath != DefaultNoImagePath)
+                return NotFound();
+            }
+
+            if (!string.IsNullOrEmpty(recipe.ImagePath) && recipe.ImagePath != DefaultNoImagePath)
+            {
+                var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", recipe.ImagePath.TrimStart('/'));
+                try
                 {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", recipe.ImagePath.TrimStart('/'));
-                    try
+                    if (System.IO.File.Exists(oldFilePath))
                     {
-                        if (System.IO.File.Exists(oldFilePath))
-                        {
-                            System.IO.File.Delete(oldFilePath);
-                        }
-                    }
-                    catch (IOException ex)
-                    {
-                        _logger.LogWarning(ex, "Не удалось удалить файл изображения рецепта: {FilePath}", oldFilePath);
+                        System.IO.File.Delete(oldFilePath);
                     }
                 }
-
-                _context.Recipes.Remove(recipe);
-                await _context.SaveChangesAsync(cancellationToken);
+                catch (IOException ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось удалить файл изображения рецепта: {FilePath}", oldFilePath);
+                }
             }
+
+            _context.Recipes.Remove(recipe);
+            await _context.SaveChangesAsync(cancellationToken);
 
             return RedirectToAction(nameof(Index));
         }
