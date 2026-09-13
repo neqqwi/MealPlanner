@@ -5,6 +5,7 @@ using MealPlanner.ViewModels.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace MealPlanner.Controllers
@@ -33,7 +34,7 @@ namespace MealPlanner.Controllers
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(i => i.Name.ToLower().Contains(searchTerm.ToLower()));
+                query = query.Where(i => EF.Functions.ILike(i.Name, $"%{searchTerm}%"));
             }
 
             var totalItems = await query.CountAsync(cancellationToken);
@@ -81,10 +82,10 @@ namespace MealPlanner.Controllers
             try
             {
                 string currentUserId = GetCurrentUserId();
-                var trimmedName = viewModel.Name.Trim();
-                var normalizedName = char.ToUpper(trimmedName[0]) + trimmedName.Substring(1).ToLower();
+                var normalizedName = NormalizeIngredientName(viewModel.Name);
+
                 var existingIngredient = await _context.Ingredients
-                    .FirstOrDefaultAsync(i => i.Name.ToLower() == normalizedName.ToLower()
+                    .FirstOrDefaultAsync(i => EF.Functions.ILike(i.Name, normalizedName)
                                            && i.Unit == viewModel.Unit
                                            && i.UserId == currentUserId, cancellationToken);
 
@@ -153,10 +154,10 @@ namespace MealPlanner.Controllers
             try
             {
                 string currentUserId = GetCurrentUserId();
-                var trimmedName = viewModel.Name.Trim();
-                var normalizedName = char.ToUpper(trimmedName[0]) + trimmedName.Substring(1).ToLower();
+                var normalizedName = NormalizeIngredientName(viewModel.Name);
+
                 var existingIngredient = await _context.Ingredients
-                    .FirstOrDefaultAsync(i => i.Name.ToLower() == normalizedName.ToLower()
+                    .FirstOrDefaultAsync(i => EF.Functions.ILike(i.Name, normalizedName)
                                            && i.Unit == viewModel.Unit
                                            && i.Id != viewModel.Id
                                            && i.UserId == currentUserId, cancellationToken);
@@ -256,6 +257,15 @@ namespace MealPlanner.Controllers
 
             TempData["SuccessMessage"] = $"Ингредиент \"{ingredient.Name} ({ingredient.Unit})\" успешно удален.";
             return RedirectToAction(nameof(Index));
+        }
+        private static string NormalizeIngredientName(string name)
+        {
+            var trimmed = name.Trim();
+
+            // Используется для форматирования отображаемого имени, а не для сравнения или идентификации
+            #pragma warning disable CA1308
+            return char.ToUpper(trimmed[0], CultureInfo.InvariantCulture) + trimmed.Substring(1).ToLowerInvariant();
+            #pragma warning restore CA1308
         }
     }
 }

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace MealPlanner.Controllers
@@ -40,7 +41,7 @@ namespace MealPlanner.Controllers
 
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(r => r.Name.ToLower().Contains(searchTerm.ToLower()));
+                query = query.Where(r => EF.Functions.ILike(r.Name, $"%{searchTerm}%"));
             }
 
             var totalItems = await query.CountAsync(cancellationToken);
@@ -116,9 +117,9 @@ namespace MealPlanner.Controllers
             {
                 if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
                 {
-                    var ext = Path.GetExtension(viewModel.ImageFile.FileName).ToLowerInvariant();
+                    var ext = Path.GetExtension(viewModel.ImageFile.FileName);
 
-                    if (!AppConstants.AllowedImageExtensions.Contains(ext))
+                    if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
                     {
                         ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
                         return await ReturnViewWithIngredients(viewModel, cancellationToken);
@@ -130,7 +131,7 @@ namespace MealPlanner.Controllers
                         return await ReturnViewWithIngredients(viewModel, cancellationToken);
                     }
 
-                    if (!viewModel.ImageFile.ContentType.StartsWith("image/"))
+                    if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                     {
                         ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
                         return await ReturnViewWithIngredients(viewModel, cancellationToken);
@@ -276,9 +277,9 @@ namespace MealPlanner.Controllers
 
                 if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
                 {
-                    var ext = Path.GetExtension(viewModel.ImageFile.FileName).ToLowerInvariant();
+                    var ext = Path.GetExtension(viewModel.ImageFile.FileName);
 
-                    if (!AppConstants.AllowedImageExtensions.Contains(ext))
+                    if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
                     {
                         ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
                         return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
@@ -290,7 +291,7 @@ namespace MealPlanner.Controllers
                         return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
                     }
 
-                    if (!viewModel.ImageFile.ContentType.StartsWith("image/"))
+                    if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                     {
                         ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
                         return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
@@ -450,7 +451,7 @@ namespace MealPlanner.Controllers
                 .OrderBy(i => i.Name)
                 .Select(i => new SelectListItem
                 {
-                    Value = i.Id.ToString(),
+                    Value = i.Id.ToString(CultureInfo.InvariantCulture),
                     Text = $"{i.Name} ({i.Unit})"
                 })
                 .ToListAsync(cancellationToken);
