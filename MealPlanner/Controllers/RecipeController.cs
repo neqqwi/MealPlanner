@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Claims;
 
@@ -29,8 +30,9 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 8, string? searchTerm = null, 
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 8, string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
             string currentUserId = GetCurrentUserId();
@@ -266,12 +268,24 @@ namespace MealPlanner.Controllers
 
                 if (recipe == null) return NotFound();
 
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
                 string? oldImagePath = recipe.ImagePath;
 
                 string newImagePath = DefaultNoImagePath;
                 if (!string.IsNullOrEmpty(viewModel.CurrentImagePath))
                 {
-                    newImagePath = viewModel.CurrentImagePath;
+                    var candidatePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                        viewModel.CurrentImagePath.TrimStart('/')));
+
+                    if (candidatePath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase)
+                        || viewModel.CurrentImagePath == DefaultNoImagePath)
+                    {
+                        newImagePath = viewModel.CurrentImagePath;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Обнаружена попытка подмены пути изображения: {Path}", viewModel.CurrentImagePath);
+                    }
                 }
 
                 if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
@@ -297,7 +311,6 @@ namespace MealPlanner.Controllers
                     }
 
                     var newFileName = Guid.NewGuid().ToString() + ext;
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
                     Directory.CreateDirectory(uploadsFolder);
                     var filePath = Path.Combine(uploadsFolder, newFileName);
 
@@ -354,19 +367,7 @@ namespace MealPlanner.Controllers
 
                 if (!string.IsNullOrEmpty(oldImagePath) && oldImagePath != DefaultNoImagePath && oldImagePath != newImagePath)
                 {
-                    var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldImagePath.TrimStart('/'));
-
-                    try
-                    {
-                        if (System.IO.File.Exists(oldFilePath))
-                        {
-                            System.IO.File.Delete(oldFilePath);
-                        }
-                    }
-                    catch (IOException ex)
-                    {
-                        _logger.LogWarning(ex, "Не удалось удалить старый файл изображения: {FilePath}", oldFilePath);
-                    }
+                    TryDeleteRecipeImage(oldImagePath);
                 }
 
                 return RedirectToAction(nameof(Details), new { id = recipe.Id });
@@ -419,26 +420,47 @@ namespace MealPlanner.Controllers
                 return NotFound();
             }
 
-            if (!string.IsNullOrEmpty(recipe.ImagePath) && recipe.ImagePath != DefaultNoImagePath)
-            {
-                var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", recipe.ImagePath.TrimStart('/'));
-                try
-                {
-                    if (System.IO.File.Exists(oldFilePath))
-                    {
-                        System.IO.File.Delete(oldFilePath);
-                    }
-                }
-                catch (IOException ex)
-                {
-                    _logger.LogWarning(ex, "Не удалось удалить файл изображения рецепта: {FilePath}", oldFilePath);
-                }
-            }
+            TryDeleteRecipeImage(recipe.ImagePath);
 
             _context.Recipes.Remove(recipe);
             await _context.SaveChangesAsync(cancellationToken);
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [SuppressMessage("Security", "CA3003:Review code for file path injection vulnerabilities",
+        Justification = "Path is normalized via GetFullPath and validated against uploadsFolder before use")]
+        private bool TryDeleteRecipeImage(string? imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath) || imagePath == DefaultNoImagePath)
+            {
+                return false;
+            }
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
+            var fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                imagePath.TrimStart('/')));
+
+            if (!fullPath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Попытка удаления файла вне разрешённой директории: {FilePath}", fullPath);
+                return false;
+            }
+
+            try
+            {
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+
+                return true;
+            }
+            catch (IOException ex)
+            {
+                _logger.LogWarning(ex, "Не удалось удалить файл изображения: {FilePath}", fullPath);
+                return false;
+            }
         }
 
         private async Task<List<SelectListItem>> GetIngredientsListAsync(CancellationToken cancellationToken)
@@ -456,14 +478,14 @@ namespace MealPlanner.Controllers
                 .ToListAsync(cancellationToken);
         }
 
-        private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel, 
+        private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel,
             CancellationToken cancellationToken)
         {
             viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
             return View("Create", viewModel);
         }
 
-        private async Task<IActionResult> ReturnViewWithIngredientsEdit(RecipeEditViewModel viewModel, 
+        private async Task<IActionResult> ReturnViewWithIngredientsEdit(RecipeEditViewModel viewModel,
             CancellationToken cancellationToken)
         {
             viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);

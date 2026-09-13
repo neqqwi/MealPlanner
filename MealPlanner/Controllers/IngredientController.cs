@@ -22,6 +22,7 @@ namespace MealPlanner.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 25, string? searchTerm = null, 
             CancellationToken cancellationToken = default)
