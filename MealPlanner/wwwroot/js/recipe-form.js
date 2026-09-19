@@ -224,26 +224,26 @@
 
     function renumberIngredients() {
         const rows = ingredientsContainer.querySelectorAll('.ingredient-row');
-    
+
         const savedData = [];
-        rows.forEach((row, index) => {
+        rows.forEach((row) => {
             const select = row.querySelector('select');
             const input = row.querySelector('input[type="number"]');
-        
-            const tomSelect = tomSelectInstances.get(index);
+
+            const tomSelect = select ? select.tomselect : null;
             savedData.push({
                 selectValue: tomSelect ? tomSelect.getValue() : (select ? select.value : ''),
                 amountValue: input ? input.value : '1'
             });
         });
-    
+
         tomSelectInstances.forEach(instance => instance.destroy());
         tomSelectInstances.clear();
-    
+
         rows.forEach((row, index) => {
             const select = row.querySelector('select');
             const input = row.querySelector('input[type="number"]');
-        
+
             if (select) {
                 select.name = `RecipeIngredients[${index}].IngredientId`;
                 select.id = `RecipeIngredients_${index}__IngredientId`;
@@ -256,7 +256,7 @@
                 input.value = savedData[index].amountValue;
             }
         });
-    
+
         ingredientIndex = rows.length;
         reinitializeValidation();
     }
