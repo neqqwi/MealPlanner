@@ -11,24 +11,21 @@
             <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
                 Рецепты
             </h1>
-            @if (User?.Identity?.IsAuthenticated != false)
+            @if (User?.Identity?.IsAuthenticated == true)
             {
                 <a asp-action="Create"
-                    asp-controller="Recipe"
-                    class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
-                    transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                   asp-controller="Recipe"
+                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
                     + Создать рецепт
                 </a>
             }
             else
             {
-                <button type="button"
-                    onclick="alert('Для создания рецептов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                    asp-controller="Recipe"
-                    class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
-                    transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                <a asp-controller="Account" 
+                   asp-action="Login"
+                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
                     + Создать рецепт
-                </button>
+                </a>
             }
         </div>
 

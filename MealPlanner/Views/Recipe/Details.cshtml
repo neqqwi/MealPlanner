@@ -96,33 +96,33 @@
                 <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
                     Добавить в план
                 </button>*@
-                @if (User?.Identity?.IsAuthenticated != false)
+                @if (User?.Identity?.IsAuthenticated == true)
                 {
                     <a asp-action="Edit"
-                        asp-route-id="@Model.Id" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-slate-50 hover:text-emerald-600 hover:shadow-lg">
+                       asp-route-id="@Model.Id" 
+                       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-slate-50 hover:text-emerald-600 hover:shadow-lg">
                         Редактировать
                     </a>
 
                     <a asp-action="Delete"
-                        asp-route-id="@Model.Id" class="inline-flex
-                        items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-medium text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-lg">
+                       asp-route-id="@Model.Id" 
+                       class="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-medium text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-lg">
                         Удалить
                     </a>
                 }
                 else
                 {
-                    <button type="button"
-                        onclick="alert('Для редактирования рецептов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                        asp-route-id="@Model.Id" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-slate-50 hover:text-emerald-600 hover:shadow-lg">
+                    <a asp-controller="Account" 
+                       asp-action="Login"
+                       class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-slate-50 hover:text-emerald-600 hover:shadow-lg">
                         Редактировать
-                    </button>
+                    </a>
 
-                    <button type="button"
-                        onclick="alert('Для удаления рецептов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                        asp-route-id="@Model.Id" class="inline-flex
-                        items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-medium text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-lg">
+                    <a asp-controller="Account" 
+                       asp-action="Login"
+                       class="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-6 py-2.5 text-sm font-medium text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-lg">
                         Удалить
-                    </button>
+                    </a>
                 }
 
             </div>

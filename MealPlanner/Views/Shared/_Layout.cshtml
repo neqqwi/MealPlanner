@@ -62,25 +62,32 @@
 
                 <div class="flex flex-wrap items-center gap-[clamp(8px,1.5vw,16px)]">
 
-                    <button class="rounded-full border border-slate-300 bg-white px-[clamp(14px,1.5vw,20px)]
-                        py-[clamp(6px,1vw,10px)] font-medium
-                        whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-slate-800
-                        transition-all duration-200
-                        hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md
-                        focus:ring-2 focus:ring-emerald-400 focus:outline-none
-                        active:translate-y-0 active:shadow-sm">
-                        Войти
-                    </button>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <span class="hidden px-2 font-medium whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-slate-600 sm:block">
+                            @User.Identity.Name
+                        </span>
 
-                    <button class="rounded-full bg-emerald-500 px-[clamp(14px,1.5vw,20px)]
-                        py-[clamp(6px,1vw,10px)] font-medium
-                        whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-white
-                        transition-all duration-200
-                        hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg
-                        focus:ring-2 focus:ring-emerald-300 focus:outline-none
-                        active:translate-y-0 active:shadow-sm">
-                        Регистрация
-                    </button>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" 
+                                    class="rounded-full border border-slate-300 bg-white px-[clamp(14px,1.5vw,20px)] py-[clamp(6px,1vw,10px)] font-medium whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md focus:ring-2 focus:ring-red-400 focus:outline-none active:translate-y-0 active:shadow-sm">
+                                Выйти
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" 
+                           class="rounded-full border border-slate-300 bg-white px-[clamp(14px,1.5vw,20px)] py-[clamp(6px,1vw,10px)] font-medium whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md focus:ring-2 focus:ring-emerald-400 focus:outline-none active:translate-y-0 active:shadow-sm">
+                            Войти
+                        </a>
+
+                        <a asp-controller="Account" asp-action="Register" 
+                           class="rounded-full bg-emerald-500 px-[clamp(14px,1.5vw,20px)] py-[clamp(6px,1vw,10px)] font-medium whitespace-nowrap text-[clamp(13px,1.1vw,15px)] text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg focus:ring-2 focus:ring-emerald-300 focus:outline-none active:translate-y-0 active:shadow-sm">
+                            Регистрация
+                        </a>
+                    }
 
                 </div>
 
@@ -88,7 +95,11 @@
 
         </header>
 
-        @if (User?.Identity?.IsAuthenticated != true)
+        @{
+            var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        }
+
+        @if (User?.Identity?.IsAuthenticated != true && currentController != "Account")
         {
             <div class="border-b border-sky-100 bg-sky-50 px-[clamp(12px,2.5vw,40px)] py-3">
                 <div class="flex items-start gap-3">

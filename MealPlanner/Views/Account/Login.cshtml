@@ -1,0 +1,54 @@
+﻿@{
+    ViewData["Title"] = "Вход в аккаунт";
+}
+@model MealPlanner.ViewModels.Accounts.LoginViewModel
+
+<div class="mx-auto max-w-md">
+    
+    <div class="mb-6 text-center">
+        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
+            Вход в аккаунт
+        </h1>
+        <p class="mt-1 text-sm text-slate-600">Введите свои данные для доступа к рецептам</p>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
+        <form asp-action="Login" method="post" class="space-y-5">
+            
+            <div asp-validation-summary="ModelOnly" class="rounded-xl bg-red-50 p-3 text-sm text-red-500"></div>
+
+            <div class="space-y-2">
+                <label asp-for="Email" class="text-sm font-medium text-slate-700">Email</label>
+                <input asp-for="Email" 
+                       class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" 
+                       placeholder="name@example.com" />
+                <span asp-validation-for="Email" class="text-sm text-red-500"></span>
+            </div>
+
+            <div class="space-y-2">
+                <label asp-for="Password" class="text-sm font-medium text-slate-700">Пароль</label>
+                <input asp-for="Password" 
+                       class="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" 
+                       placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-sm text-red-500"></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input asp-for="RememberMe" type="checkbox" class="size-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
+                <label asp-for="RememberMe" class="cursor-pointer text-sm text-slate-600 select-none">Запомнить меня</label>
+            </div>
+
+            <button type="submit" 
+                    class="w-full rounded-xl bg-emerald-500 px-5 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                Войти
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-slate-600">
+            Нет аккаунта? 
+            <a asp-action="Register" class="font-medium text-emerald-600 transition hover:text-emerald-700 hover:underline">
+                Зарегистрироваться
+            </a>
+        </div>
+    </div>
+</div>

@@ -30,7 +30,7 @@ namespace MealPlanner.Controllers
             string currentUserId = GetCurrentUserId();
 
             IQueryable<Ingredient> query = _context.Ingredients
-                .Where(i => i.UserId == currentUserId || i.UserId == AppConstants.DemoUserId)
+                .Where(i => i.UserId == currentUserId)
                 .OrderBy(i => i.Name);
 
             if (!string.IsNullOrEmpty(searchTerm))
@@ -87,13 +87,12 @@ namespace MealPlanner.Controllers
 
                 var existingIngredient = await _context.Ingredients
                     .FirstOrDefaultAsync(i => EF.Functions.ILike(i.Name, normalizedName)
-                                           && i.Unit == viewModel.Unit
                                            && i.UserId == currentUserId, cancellationToken);
 
                 if (existingIngredient != null)
                 {
-                    ModelState.AddModelError("", $"Ингредиент \"{existingIngredient.Name}\" " +
-                        $"({existingIngredient.Unit}) уже существует в вашей базе данных");
+                    ModelState.AddModelError("", $"Ингредиент \"{existingIngredient.Name}\"  уже существует в вашей базе данных" +
+                        $"с единицей измерения \"{existingIngredient.Unit}\". У ингредиента может быть только одна единица измерения.");
                     return View(viewModel);
                 }
 
@@ -159,14 +158,13 @@ namespace MealPlanner.Controllers
 
                 var existingIngredient = await _context.Ingredients
                     .FirstOrDefaultAsync(i => EF.Functions.ILike(i.Name, normalizedName)
-                                           && i.Unit == viewModel.Unit
                                            && i.Id != viewModel.Id
                                            && i.UserId == currentUserId, cancellationToken);
 
                 if (existingIngredient != null)
                 {
-                    ModelState.AddModelError("", $"Ингредиент \"{existingIngredient.Name}\" " +
-                        $"({existingIngredient.Unit}) уже существует в вашей базе данных");
+                    ModelState.AddModelError("", $"Ингредиент \"{existingIngredient.Name}\"  уже существует в вашей базе данных" +
+                        $"с единицей измерения \"{existingIngredient.Unit}\". У ингредиента может быть только одна единица измерения.");
                     return View(viewModel);
                 }
 

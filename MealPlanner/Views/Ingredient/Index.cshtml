@@ -11,23 +11,21 @@
             <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
                 Ингредиенты
             </h1>
-            @if (User?.Identity?.IsAuthenticated != false)
+            @if (User?.Identity?.IsAuthenticated == true)
             {
                 <a asp-action="Create"
                    asp-controller="Ingredient"
-                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
-                   transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
                         + Добавить ингредиент
                 </a>
             }
             else
             {
-                <button type="button"
-                   onclick="alert('Для добавления ингредиентов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white
-                   transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                <a asp-controller="Account" 
+                   asp-action="Login"
+                   class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
                         + Добавить ингредиент
-                </button>
+                </a>
             }
         </div>
 
@@ -71,33 +69,33 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    @if (User?.Identity?.IsAuthenticated != false)
+                                    @if (User?.Identity?.IsAuthenticated == true)
                                     {
                                         <a asp-action="Edit"
-                                        asp-route-id="@ingredient.Id"
-                                        class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
+                                           asp-route-id="@ingredient.Id"
+                                           class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
                                             Редактировать
                                         </a>
                                         <a asp-action="Delete"
-                                        asp-route-id="@ingredient.Id"
-                                        class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                           asp-route-id="@ingredient.Id"
+                                           class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
                                             Удалить
                                         </a>
                                     }
                                     else
                                     {
-                                        <button type="button"
-                                        onclick="alert('Для редактирования ингредиентов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                                        asp-route-id="@ingredient.Id"
-                                        class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
+                                        <a asp-controller="Account"
+                                           asp-action="Login"
+                                           asp-route-returnUrl="@Context.Request.Path"
+                                           class="rounded-xl px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50">
                                             Редактировать
-                                        </button>
-                                        <button type="button"
-                                        onclick="alert('Для удаления ингредиентов необходимо авторизоваться. Регистрация будет добавлена в ближайшее время.')"
-                                        asp-route-id="@ingredient.Id"
-                                        class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                        </a>
+                                        <a asp-controller="Account"
+                                           asp-action="Login"
+                                           asp-route-returnUrl="@Context.Request.Path"
+                                           class="rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
                                             Удалить
-                                        </button>
+                                        </a>
                                     }
                                 </div>
                             </td>

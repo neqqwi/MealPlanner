@@ -3,6 +3,7 @@ using System;
 using MealPlanner.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MealPlanner.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913034323_AddIdentityTables")]
+    partial class AddIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -109,10 +112,9 @@ namespace MealPlanner.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("Name");
 
-                    b.HasIndex("Name", "UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Ingredients");
                 });
@@ -311,7 +313,7 @@ namespace MealPlanner.Migrations
             modelBuilder.Entity("MealPlanner.Models.Ingredient", b =>
                 {
                     b.HasOne("MealPlanner.Models.ApplicationUser", "User")
-                        .WithMany("Ingredients")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -322,7 +324,7 @@ namespace MealPlanner.Migrations
             modelBuilder.Entity("MealPlanner.Models.Recipe", b =>
                 {
                     b.HasOne("MealPlanner.Models.ApplicationUser", "User")
-                        .WithMany("Recipes")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -398,13 +400,6 @@ namespace MealPlanner.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("MealPlanner.Models.ApplicationUser", b =>
-                {
-                    b.Navigation("Ingredients");
-
-                    b.Navigation("Recipes");
                 });
 
             modelBuilder.Entity("MealPlanner.Models.Ingredient", b =>

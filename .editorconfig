@@ -2,6 +2,7 @@ root = true
 
 [**/Migrations/*.cs]
 dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1861.severity = none
 
 [**/ViewModels/**/*.cs]
 dotnet_diagnostic.CA2227.severity = none

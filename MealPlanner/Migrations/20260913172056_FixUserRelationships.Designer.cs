@@ -3,6 +3,7 @@ using System;
 using MealPlanner.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MealPlanner.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913172056_FixUserRelationships")]
+    partial class FixUserRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -94,6 +97,9 @@ namespace MealPlanner.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -109,10 +115,11 @@ namespace MealPlanner.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ApplicationUserId");
 
-                    b.HasIndex("Name", "UserId")
-                        .IsUnique();
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Ingredients");
                 });
@@ -124,6 +131,9 @@ namespace MealPlanner.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("text");
 
                     b.Property<int>("CookingTime")
                         .HasColumnType("integer");
@@ -150,6 +160,8 @@ namespace MealPlanner.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("Name");
 
@@ -310,8 +322,12 @@ namespace MealPlanner.Migrations
 
             modelBuilder.Entity("MealPlanner.Models.Ingredient", b =>
                 {
-                    b.HasOne("MealPlanner.Models.ApplicationUser", "User")
+                    b.HasOne("MealPlanner.Models.ApplicationUser", null)
                         .WithMany("Ingredients")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("MealPlanner.Models.ApplicationUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -321,8 +337,12 @@ namespace MealPlanner.Migrations
 
             modelBuilder.Entity("MealPlanner.Models.Recipe", b =>
                 {
-                    b.HasOne("MealPlanner.Models.ApplicationUser", "User")
+                    b.HasOne("MealPlanner.Models.ApplicationUser", null)
                         .WithMany("Recipes")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("MealPlanner.Models.ApplicationUser", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
