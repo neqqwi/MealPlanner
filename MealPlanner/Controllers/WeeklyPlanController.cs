@@ -3,6 +3,7 @@ using MealPlanner.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Numerics;
 
 namespace MealPlanner.Controllers;
 
@@ -81,10 +82,42 @@ public class WeeklyPlanController : BaseController
             }
 
             await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
+
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
                 currentUserId, recipeId, dayValues.Length);
+            }
         }
 
         return RedirectToAction("Index", "Recipe");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
+
+        var plan = await _context.WeeklyPlans
+            .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == currentUserId, cancellationToken);
+
+        if (plan == null)
+        {
+            _logger.LogWarning("Попытка удалить несуществующий или чужой план с ID {PlanId} пользователем {UserId}",
+                id, currentUserId);
+            return NotFound();
+        }
+
+        _context.WeeklyPlans.Remove(plan);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("Пользователь {UserId} удалил рецепт из плана на день {DayOfWeek}",
+            currentUserId, plan.DayOfWeek);
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 }
