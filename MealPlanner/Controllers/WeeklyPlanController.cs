@@ -36,4 +36,55 @@ public class WeeklyPlanController : BaseController
 
         return View(groupedPlans);
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Add(int recipeId, string selectedDays, CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
+
+        var recipe = await _context.Recipes
+            .FirstOrDefaultAsync(r => r.Id == recipeId && r.UserId == currentUserId, cancellationToken);
+
+        if (recipe == null)
+        {
+            _logger.LogWarning("Попытка добавить несуществующий или чужой рецепт {RecipeId} в план пользователем {UserId}",
+                recipeId, currentUserId);
+            return NotFound();
+        }
+
+        if (!string.IsNullOrEmpty(selectedDays))
+        {
+            var dayValues = selectedDays.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var dayValue in dayValues)
+            {
+                if (int.TryParse(dayValue, out int dayInt))
+                {
+                    var dayOfWeek = (DayOfWeek)dayInt;
+
+                    var exists = await _context.WeeklyPlans
+                        .AnyAsync(wp => wp.RecipeId == recipeId
+                                     && wp.DayOfWeek == dayOfWeek
+                                     && wp.UserId == currentUserId, cancellationToken);
+
+                    if (!exists)
+                    {
+                        _context.WeeklyPlans.Add(new WeeklyPlan
+                        {
+                            RecipeId = recipeId,
+                            DayOfWeek = dayOfWeek,
+                            UserId = currentUserId
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
+                currentUserId, recipeId, dayValues.Length);
+        }
+
+        return RedirectToAction("Index", "Recipe");
+    }
 }

@@ -1,0 +1,62 @@
+﻿<div id="addToPlanModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="relative mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+        <button type="button" onclick="closeAddToPlanModal()" 
+                class="absolute top-4 right-4 text-slate-400 transition hover:text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+        </button>
+    
+        <div class="flex flex-col gap-6 sm:flex-row">
+            <div class="flex-shrink-0">
+                <img id="modalRecipeImage" src="" alt="" 
+                     class="h-48 w-full rounded-xl object-cover sm:h-48 sm:w-48"
+                     onerror="this.onerror=null; this.src='/images/no-image.svg';"/>
+            </div>
+        
+            <div class="flex-1">
+                <h3 id="modalRecipeName" class="mb-4 text-xl font-bold text-slate-900"></h3>
+            
+                <form id="addToPlanForm" method="post" asp-controller="WeeklyPlan" asp-action="Add">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="recipeId" id="modalRecipeId" />
+                
+                    <p class="mb-3 text-sm font-medium text-slate-700">Выберите дни недели:</p>
+                
+                    <div class="mb-4 grid grid-cols-7 gap-2">
+                        @{
+                            var days = new[]
+                            {
+                                new { Day = DayOfWeek.Monday, Name = "Пн" },
+                                new { Day = DayOfWeek.Tuesday, Name = "Вт" },
+                                new { Day = DayOfWeek.Wednesday, Name = "Ср" },
+                                new { Day = DayOfWeek.Thursday, Name = "Чт" },
+                                new { Day = DayOfWeek.Friday, Name = "Пт" },
+                                new { Day = DayOfWeek.Saturday, Name = "Сб" },
+                                new { Day = DayOfWeek.Sunday, Name = "Вс" }
+                            };
+                        }
+                        @foreach (var day in days)
+                        {
+                            <button type="button" 
+                                    onclick="toggleDay(this, @((int)day.Day))"
+                                    data-day="@((int)day.Day)"
+                                    class="day-button rounded-lg border-2 border-slate-200 bg-white px-2 py-3 text-sm font-medium text-slate-700 transition hover:border-emerald-400 hover:text-emerald-600">
+                                @day.Name
+                            </button>
+                        }
+                    </div>
+                
+                    <input type="hidden" name="selectedDays" id="selectedDaysInput" />
+                
+                    <button type="submit" 
+                            class="w-full rounded-xl bg-emerald-500 px-4 py-3 font-medium text-white transition hover:bg-emerald-600">
+                        Сохранить в план
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/weekly-plan.js" asp-append-version="true"></script>
