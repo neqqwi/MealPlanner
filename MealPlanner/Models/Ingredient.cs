@@ -18,5 +18,6 @@ namespace MealPlanner.Models
         [Required]
         public string UserId { get; set; } = string.Empty;
         public ApplicationUser? User { get; set; }
+        public ICollection<UserIngredient> UserIngredients { get; } = new List<UserIngredient>();
     }
 }

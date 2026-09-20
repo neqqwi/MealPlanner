@@ -11,6 +11,7 @@ namespace MealPlanner.Data
         public DbSet<Recipe> Recipes { get; set; } = null!;
         public DbSet<Ingredient> Ingredients { get; set; } = null!;
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; } = null!;
+        public DbSet<UserIngredient> UserIngredients { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -56,6 +57,21 @@ namespace MealPlanner.Data
                 .HasOne(i => i.User)
                 .WithMany(u => u.Ingredients)
                 .HasForeignKey(i => i.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserIngredient>()
+                .HasKey(ui => new { ui.UserId, ui.IngredientId });
+
+            builder.Entity<UserIngredient>()
+                .HasOne(ui => ui.User)
+                .WithMany(u => u.UserIngredients)
+                .HasForeignKey(ui => ui.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserIngredient>()
+                .HasOne(ui => ui.Ingredient)
+                .WithMany(i => i.UserIngredients)
+                .HasForeignKey(ui => ui.IngredientId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

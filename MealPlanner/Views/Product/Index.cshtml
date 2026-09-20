@@ -1,0 +1,107 @@
+﻿@{
+    ViewData["Title"] = "Мои продукты";
+}
+@model MealPlanner.ViewModels.Products.MyProductsViewModel
+
+<div class="mx-auto max-w-3xl">
+
+    <div class="flex flex-col gap-6">
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
+                Мои продукты
+            </h1>
+        </div>
+
+        <p class="-mt-4 text-sm text-slate-600">
+            Отметьте, что уже есть дома — это учтется при составлении списка покупок
+        </p>
+
+        <div class="relative">
+            <input type="text"
+                   id="productSearch"
+                   placeholder="Поиск продукта..."
+                   class="w-full rounded-xl border border-slate-200 px-4 py-3 pl-11 text-slate-900 placeholder-slate-400
+                          transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                 class="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-slate-400">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <form asp-controller="Product" asp-action="Index" method="post" id="productsForm">
+
+                <div asp-validation-summary="ModelOnly" class="m-6 rounded-xl bg-red-50 p-3 text-sm text-red-500"></div>
+
+                <div id="products-error" class="m-6 hidden rounded-xl bg-red-50 p-3 text-sm text-red-500">
+                    Список продуктов пуст
+                </div>
+
+                <table class="min-w-full" id="products-table">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="w-5/12 px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                                Продукт
+                            </th>
+                            <th scope="col" class="w-48 px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                                Количество
+                            </th>
+                            <th scope="col" class="w-48 px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                                Действия
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-container" class="divide-y divide-slate-100 bg-white">
+                        @for (int i = 0; i < Model.Products.Count; i++)
+                        {
+                            <tr class="product-row group transition hover:bg-slate-50">
+                                <td class="w-5/12 px-6 py-4 align-top">
+                                    <select asp-for="Products[i].IngredientId"
+                                            asp-items="Model.PossibleIngredients"
+                                            required>
+                                        <option value="">Выберите продукт</option>
+                                    </select>
+                                    <span asp-validation-for="Products[i].IngredientId" class="text-sm text-red-500"></span>
+                                </td>
+                                <td class="w-48 px-6 py-4 text-center align-top">
+                                    <div class="inline-flex flex-col items-center gap-1">
+                                        <input asp-for="Products[i].Quantity"
+                                               type="number"
+                                               min="0"
+                                               max="100000"
+                                               required
+                                               class="w-24 rounded-lg border border-slate-200 px-3 py-2 text-center text-sm text-slate-900 placeholder-slate-400 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none" />
+                                        <span asp-validation-for="Products[i].Quantity" class="block text-xs text-red-500"></span>
+                                    </div>
+                                </td>
+                                <td class="w-48 px-6 py-4 text-center align-top">
+                                    <button type="button" class="delete-btn rounded-xl px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="flex flex-col gap-4 p-6">
+                    <button type="button" id="addProductBtn"
+                            class="w-fit rounded-xl border-2 border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-emerald-500 hover:text-emerald-600">
+                        + Добавить продукт
+                    </button>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+                            Сохранить
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script type="application/json" id="possible-ingredients-data">@Html.Raw(Json.Serialize(Model.PossibleIngredients.Select(p => new { value = p.Value, text = p.Text })))</script>
+<script src="~/js/products-form.js"></script>
