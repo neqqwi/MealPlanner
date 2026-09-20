@@ -1,0 +1,200 @@
+﻿@{
+    ViewData["Title"] = "План на неделю";
+}
+@model Dictionary<DayOfWeek, List<MealPlanner.Models.WeeklyPlan>>
+
+<div class="mx-auto max-w-5xl">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 class="font-bold text-[clamp(22px,2vw,32px)] text-slate-900">
+            План на неделю
+        </h1>
+        <a href="#"
+           class="rounded-full bg-emerald-500 px-5 py-2 font-medium text-white transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-lg">
+            Сгенерировать список покупок
+        </a>
+    </div>
+
+    @{
+        var daysOrder = new DayOfWeek[]
+        {
+            DayOfWeek.Monday,
+            DayOfWeek.Tuesday,
+            DayOfWeek.Wednesday,
+            DayOfWeek.Thursday,
+            DayOfWeek.Friday,
+            DayOfWeek.Saturday,
+            DayOfWeek.Sunday
+        };
+
+        var dayNames = new Dictionary<DayOfWeek, string>
+        {
+            { DayOfWeek.Monday, "Понедельник" },
+            { DayOfWeek.Tuesday, "Вторник" },
+            { DayOfWeek.Wednesday, "Среда" },
+            { DayOfWeek.Thursday, "Четверг" },
+            { DayOfWeek.Friday, "Пятница" },
+            { DayOfWeek.Saturday, "Суббота" },
+            { DayOfWeek.Sunday, "Воскресенье" }
+        };
+    }
+
+    <div class="flex flex-col gap-4">
+        @foreach (var day in daysOrder)
+        {
+            var isToday = day == DateTime.Today.DayOfWeek;
+
+            string iconClasses;
+            if (isToday)
+            {
+                iconClasses = "bg-emerald-500 text-white";
+            }
+            else
+            {
+                iconClasses = "bg-white text-slate-600";
+            }
+
+            List<WeeklyPlan> plansForDay;
+            if (!Model.TryGetValue(day, out var dayPlans) || dayPlans == null)
+            {
+                plansForDay = new List<WeeklyPlan>();
+            }
+            else
+            {
+                plansForDay = dayPlans;
+            }
+
+            var count = plansForDay.Count;
+            string word;
+            if (count == 1)
+            {
+                word = "рецепт";
+            }
+            else if (count >= 2 && count <= 4)
+            {
+                word = "рецепта";
+            }
+            else
+            {
+                word = "рецептов";
+            }
+
+            <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:shadow-md">
+                <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3">
+                    <div class="flex items-center justify-center rounded-lg @iconClasses p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-semibold text-slate-900">
+                            @dayNames[day]
+                            @if (isToday)
+                            {
+                                <span class="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                    Сегодня
+                                </span>
+                            }
+                        </h2>
+                    </div>
+                    <span class="text-sm font-medium text-slate-500">
+                        @count @word
+                    </span>
+                </div>
+
+                <div class="p-4">
+                    @if (!plansForDay.Any())
+                    {
+                        <div class="flex flex-col items-center justify-center py-8 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mb-2 size-10 text-slate-300">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <p class="text-sm text-slate-400">Пока пусто. Добавьте рецепты из списка.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col gap-3">
+                            @foreach (var plan in plansForDay)
+                            {
+                                var hasRecipe = plan.Recipe != null;
+
+                                string cardClasses = "";
+                                if (hasRecipe)
+                                {
+                                    cardClasses = "cursor-pointer";
+                                }
+
+                                string onclickAttr = "";
+                                if (hasRecipe)
+                                {
+                                    onclickAttr = $"onclick=\"window.location='{Url.Action("Details", "Recipe", new { id = plan.Recipe!.Id })}'\"";
+                                }
+
+                                <div class="group flex items-start gap-4 rounded-xl border border-slate-100 bg-white p-3 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-sm @cardClasses"
+                                     @Html.Raw(onclickAttr)>
+
+                                    <div class="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                                        @if (hasRecipe)
+                                        {
+                                            <img src="@(plan.Recipe!.ImagePath ?? "/images/no-image.svg")"
+                                                 alt="@plan.Recipe.Name"
+                                                 class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                                 onerror="this.onerror=null; this.src='/images/no-image.svg';" />
+                                        }
+                                        else
+                                        {
+                                            <img src="/images/no-image.svg" alt="Рецепт удалён" class="h-full w-full object-cover" />
+                                        }
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        @if (hasRecipe)
+                                        {
+                                            <h3 class="mb-1 truncate text-base font-semibold text-slate-900 transition group-hover:text-emerald-600"
+                                                title="@plan.Recipe?.Name">
+                                                @plan.Recipe?.Name
+                                            </h3>
+
+                                            <div class="mb-2 flex items-center gap-3 text-sm text-slate-500">
+                                                <span class="flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 text-emerald-500">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                    </svg>
+                                                    @plan.Recipe?.CookingTime мин
+                                                </span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(plan.Recipe?.Description))
+                                            {
+                                                <p class="line-clamp-2 text-sm leading-snug text-slate-600">
+                                                    @plan.Recipe?.Description
+                                                </p>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <h3 class="mb-1 truncate text-base font-semibold text-slate-400">
+                                                Рецепт удалён
+                                            </h3>
+                                        }
+                                    </div>
+
+                                    <form method="post" asp-action="Delete" asp-route-id="@plan.Id" class="flex-shrink-0" onclick="event.stopPropagation()">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                                                title="Удалить из плана">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

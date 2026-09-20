@@ -12,6 +12,7 @@ namespace MealPlanner.Data
         public DbSet<Ingredient> Ingredients { get; set; } = null!;
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; } = null!;
         public DbSet<UserIngredient> UserIngredients { get; set; } = null!;
+        public DbSet<WeeklyPlan> WeeklyPlans { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -73,6 +74,21 @@ namespace MealPlanner.Data
                 .WithMany(i => i.UserIngredients)
                 .HasForeignKey(ui => ui.IngredientId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<WeeklyPlan>()
+                .HasOne(wp => wp.Recipe)
+                .WithMany()
+                .HasForeignKey(wp => wp.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<WeeklyPlan>()
+                .HasOne(wp => wp.User)
+                .WithMany()
+                .HasForeignKey(wp => wp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<WeeklyPlan>()
+                .HasIndex(wp => new { wp.UserId, wp.DayOfWeek });
         }
     }
 }
