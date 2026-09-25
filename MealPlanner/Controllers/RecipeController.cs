@@ -13,483 +13,482 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Claims;
 
-namespace MealPlanner.Controllers
+namespace MealPlanner.Controllers;
+
+[Authorize]
+public class RecipeController : BaseController
 {
-    [Authorize]
-    public class RecipeController : BaseController
+    private const int ImageSize = 640;
+    private const string DefaultNoImagePath = "/images/no-image.svg";
+
+    private readonly AppDbContext _context;
+    private readonly ILogger<RecipeController> _logger;
+
+    public RecipeController(AppDbContext context, ILogger<RecipeController> logger)
     {
-        private const int ImageSize = 640;
-        private const string DefaultNoImagePath = "/images/no-image.svg";
+        _context = context;
+        _logger = logger;
+    }
 
-        private readonly AppDbContext _context;
-        private readonly ILogger<RecipeController> _logger;
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> Index(int page = 1, int pageSize = 8, string? searchTerm = null,
+        CancellationToken cancellationToken = default)
+    {
+        string currentUserId = GetCurrentUserId();
 
-        public RecipeController(AppDbContext context, ILogger<RecipeController> logger)
+        IQueryable<Recipe> query = _context.Recipes
+            .Where(r => r.UserId == currentUserId)
+            .OrderByDescending(r => r.Id);
+
+        if (!string.IsNullOrEmpty(searchTerm))
         {
-            _context = context;
-            _logger = logger;
+            query = query.Where(r => EF.Functions.ILike(r.Name, $"%{searchTerm}%"));
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 8, string? searchTerm = null,
-            CancellationToken cancellationToken = default)
+        var totalItems = await query.CountAsync(cancellationToken);
+        int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        if (page < 1) page = 1;
+        if (page > totalPages && totalPages > 0) page = totalPages;
+
+        int itemsToSkip = (page - 1) * pageSize;
+
+        var pageResult = await query
+            .Skip(itemsToSkip)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var viewModel = new PaginatedListViewModel<Recipe>
         {
-            string currentUserId = GetCurrentUserId();
+            Items = pageResult,
+            CurrentPage = page,
+            TotalPages = totalPages,
+            SearchTerm = searchTerm ?? string.Empty
+        };
 
-            IQueryable<Recipe> query = _context.Recipes
-                .Where(r => r.UserId == currentUserId)
-                .OrderByDescending(r => r.Id);
+        return View(viewModel);
+    }
 
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                query = query.Where(r => EF.Functions.ILike(r.Name, $"%{searchTerm}%"));
-            }
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
 
-            var totalItems = await query.CountAsync(cancellationToken);
-            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+        var recipe = await _context.Recipes
+            .Include(r => r.RecipeIngredients)
+            .ThenInclude(ri => ri.Ingredient)
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
 
-            if (page < 1) page = 1;
-            if (page > totalPages && totalPages > 0) page = totalPages;
-
-            int itemsToSkip = (page - 1) * pageSize;
-
-            var pageResult = await query
-                .Skip(itemsToSkip)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
-
-            var viewModel = new PaginatedListViewModel<Recipe>
-            {
-                Items = pageResult,
-                CurrentPage = page,
-                TotalPages = totalPages,
-                SearchTerm = searchTerm ?? string.Empty
-            };
-
-            return View(viewModel);
+        if (recipe == null)
+        {
+            return NotFound();
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+        return View(recipe);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
+    {
+        var viewModel = new RecipeCreateViewModel
         {
-            string currentUserId = GetCurrentUserId();
+            PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken)
+        };
 
-            var recipe = await _context.Recipes
-                .Include(r => r.RecipeIngredients)
-                .ThenInclude(ri => ri.Ingredient)
-                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
+        viewModel.RecipeIngredients.Add(new RecipeIngredientViewModel());
 
-            if (recipe == null)
-            {
-                return NotFound();
-            }
+        return View(viewModel);
+    }
 
-            return View(recipe);
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(RecipeCreateViewModel viewModel, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        if (!ModelState.IsValid)
+        {
+            return await ReturnViewWithIngredients(viewModel, cancellationToken);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Create(CancellationToken cancellationToken)
+        string imagePath = DefaultNoImagePath;
+
+        try
         {
-            var viewModel = new RecipeCreateViewModel
+            if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
             {
-                PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken)
-            };
+                var ext = Path.GetExtension(viewModel.ImageFile.FileName);
 
-            viewModel.RecipeIngredients.Add(new RecipeIngredientViewModel());
-
-            return View(viewModel);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(RecipeCreateViewModel viewModel, CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(viewModel);
-
-            if (!ModelState.IsValid)
-            {
-                return await ReturnViewWithIngredients(viewModel, cancellationToken);
-            }
-
-            string imagePath = DefaultNoImagePath;
-
-            try
-            {
-                if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
+                if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
                 {
-                    var ext = Path.GetExtension(viewModel.ImageFile.FileName);
-
-                    if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
-                    {
-                        ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
-                    }
-
-                    if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
-                    {
-                        ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
-                    }
-
-                    if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
-                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
-                    }
-
-                    var newFileName = Guid.NewGuid().ToString() + ext;
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
-                    Directory.CreateDirectory(uploadsFolder);
-                    var filePath = Path.Combine(uploadsFolder, newFileName);
-
-                    using (var image = Image.Load(viewModel.ImageFile.OpenReadStream()))
-                    {
-                        image.Mutate(x => x.Resize(new ResizeOptions
-                        {
-                            Size = new Size(ImageSize, ImageSize),
-                            Mode = ResizeMode.Crop,
-                            Position = AnchorPositionMode.Center,
-                            Sampler = KnownResamplers.Lanczos3
-                        }));
-
-                        image.Save(filePath);
-                    }
-
-                    imagePath = "/uploads/recipes/" + newFileName;
-                }
-
-                var recipe = new Recipe
-                {
-                    UserId = GetCurrentUserId(),
-                    Name = viewModel.Name,
-                    Description = viewModel.Description,
-                    CookingTime = viewModel.CookingTime,
-                    Instructions = viewModel.Instructions?.Trim(),
-                    ImagePath = imagePath
-                };
-
-                var addedIngredients = new HashSet<int>();
-
-                foreach (var ingredientVm in viewModel.RecipeIngredients)
-                {
-                    if (ingredientVm.IngredientId > 0 && ingredientVm.Amount > 0)
-                    {
-                        if (!addedIngredients.Add(ingredientVm.IngredientId))
-                        {
-                            ModelState.AddModelError("", "Один из ингредиентов добавлен в рецепт дважды");
-                            return await ReturnViewWithIngredients(viewModel, cancellationToken);
-                        }
-
-                        recipe.RecipeIngredients.Add(new RecipeIngredient
-                        {
-                            IngredientId = ingredientVm.IngredientId,
-                            Amount = ingredientVm.Amount
-                        });
-                    }
-                }
-
-                if (!viewModel.RecipeIngredients.Any(i => i.IngredientId > 0 && i.Amount > 0))
-                {
-                    ModelState.AddModelError("", "Добавьте хотя бы один ингредиент");
+                    ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
                     return await ReturnViewWithIngredients(viewModel, cancellationToken);
                 }
 
-                _context.Recipes.Add(recipe);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("Создание рецепта '{RecipeName}' было отменено", viewModel.Name);
-                return new StatusCodeResult(499);
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "Ошибка базы данных при добавлении рецепта '{RecipeName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
-                return View(viewModel);
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
-        {
-            string currentUserId = GetCurrentUserId();
-
-            var recipe = await _context.Recipes
-                .Include(r => r.RecipeIngredients)
-                    .ThenInclude(ri => ri.Ingredient)
-                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
-
-            if (recipe == null) return NotFound();
-
-            var allIngredients = await GetIngredientsListAsync(cancellationToken);
-
-            var viewModel = new RecipeEditViewModel
-            {
-                Id = recipe.Id,
-                Name = recipe.Name,
-                Description = recipe.Description,
-                CookingTime = recipe.CookingTime,
-                Instructions = recipe.Instructions,
-                CurrentImagePath = recipe.ImagePath,
-                PossibleRecipeIngredients = allIngredients,
-                RecipeIngredients = recipe.RecipeIngredients.Select(ri => new RecipeIngredientViewModel
+                if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
                 {
-                    IngredientId = ri.IngredientId,
-                    Amount = ri.Amount
-                }).ToList()
+                    ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
+                    return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                }
+
+                if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
+                    return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                }
+
+                var newFileName = Guid.NewGuid().ToString() + ext;
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
+                Directory.CreateDirectory(uploadsFolder);
+                var filePath = Path.Combine(uploadsFolder, newFileName);
+
+                using (var image = Image.Load(viewModel.ImageFile.OpenReadStream()))
+                {
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(ImageSize, ImageSize),
+                        Mode = ResizeMode.Crop,
+                        Position = AnchorPositionMode.Center,
+                        Sampler = KnownResamplers.Lanczos3
+                    }));
+
+                    image.Save(filePath);
+                }
+
+                imagePath = "/uploads/recipes/" + newFileName;
+            }
+
+            var recipe = new Recipe
+            {
+                UserId = GetCurrentUserId(),
+                Name = viewModel.Name,
+                Description = viewModel.Description,
+                CookingTime = viewModel.CookingTime,
+                Instructions = viewModel.Instructions?.Trim(),
+                ImagePath = imagePath
             };
 
-            return View(viewModel);
-        }
+            var addedIngredients = new HashSet<int>();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(RecipeEditViewModel viewModel, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(viewModel);
-
-            if (!ModelState.IsValid)
+            foreach (var ingredientVm in viewModel.RecipeIngredients)
             {
-                return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-            }
-
-            try
-            {
-                string currentUserId = GetCurrentUserId();
-
-                var recipe = await _context.Recipes
-                    .Include(r => r.RecipeIngredients)
-                    .FirstOrDefaultAsync(r => r.Id == viewModel.Id && r.UserId == currentUserId, cancellationToken);
-
-                if (recipe == null) return NotFound();
-
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
-                string? oldImagePath = recipe.ImagePath;
-
-                string newImagePath = DefaultNoImagePath;
-                if (!string.IsNullOrEmpty(viewModel.CurrentImagePath))
+                if (ingredientVm.IngredientId > 0 && ingredientVm.Amount > 0)
                 {
-                    var candidatePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                        viewModel.CurrentImagePath.TrimStart('/')));
+                    if (!addedIngredients.Add(ingredientVm.IngredientId))
+                    {
+                        ModelState.AddModelError("", "Один из ингредиентов добавлен в рецепт дважды");
+                        return await ReturnViewWithIngredients(viewModel, cancellationToken);
+                    }
 
-                    if (candidatePath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase)
-                        || viewModel.CurrentImagePath == DefaultNoImagePath)
+                    recipe.RecipeIngredients.Add(new RecipeIngredient
                     {
-                        newImagePath = viewModel.CurrentImagePath;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Обнаружена попытка подмены пути изображения: {Path}", viewModel.CurrentImagePath);
-                    }
+                        IngredientId = ingredientVm.IngredientId,
+                        Amount = ingredientVm.Amount
+                    });
                 }
-
-                if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
-                {
-                    var ext = Path.GetExtension(viewModel.ImageFile.FileName);
-
-                    if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
-                    {
-                        ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
-                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-                    }
-
-                    if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
-                    {
-                        ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
-                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-                    }
-
-                    if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
-                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-                    }
-
-                    var newFileName = Guid.NewGuid().ToString() + ext;
-                    Directory.CreateDirectory(uploadsFolder);
-                    var filePath = Path.Combine(uploadsFolder, newFileName);
-
-                    using (var image = Image.Load(viewModel.ImageFile.OpenReadStream()))
-                    {
-                        image.Mutate(x => x.Resize(new ResizeOptions
-                        {
-                            Size = new Size(ImageSize, ImageSize),
-                            Mode = ResizeMode.Crop,
-                            Position = AnchorPositionMode.Center,
-                            Sampler = KnownResamplers.Lanczos3
-                        }));
-
-                        image.Save(filePath);
-                    }
-
-                    newImagePath = "/uploads/recipes/" + newFileName;
-                }
-
-                recipe.Name = viewModel.Name;
-                recipe.Description = viewModel.Description;
-                recipe.CookingTime = viewModel.CookingTime;
-                recipe.Instructions = viewModel.Instructions?.Trim();
-                recipe.ImagePath = newImagePath;
-
-                recipe.RecipeIngredients.Clear();
-                var addedIngredients = new HashSet<int>();
-
-                foreach (var ingredientVm in viewModel.RecipeIngredients)
-                {
-                    if (ingredientVm.IngredientId > 0 && ingredientVm.Amount > 0)
-                    {
-                        if (!addedIngredients.Add(ingredientVm.IngredientId))
-                        {
-                            ModelState.AddModelError("", "Один из ингредиентов добавлен в рецепт дважды");
-                            return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-                        }
-
-                        recipe.RecipeIngredients.Add(new RecipeIngredient
-                        {
-                            IngredientId = ingredientVm.IngredientId,
-                            Amount = ingredientVm.Amount
-                        });
-                    }
-                }
-
-                if (!viewModel.RecipeIngredients.Any(i => i.IngredientId > 0 && i.Amount > 0))
-                {
-                    ModelState.AddModelError("", "Добавьте хотя бы один ингредиент");
-                    return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
-                }
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                if (!string.IsNullOrEmpty(oldImagePath) && oldImagePath != DefaultNoImagePath && oldImagePath != newImagePath)
-                {
-                    TryDeleteRecipeImage(oldImagePath);
-                }
-
-                return RedirectToAction(nameof(Details), new { id = recipe.Id });
             }
-            catch (OperationCanceledException)
+
+            if (!viewModel.RecipeIngredients.Any(i => i.IngredientId > 0 && i.Amount > 0))
             {
-                _logger.LogWarning("Редактирование рецепта '{RecipeName}' было отменено", viewModel.Name);
-                return new StatusCodeResult(499);
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "Ошибка базы данных при редактировании рецепта '{RecipeName}'", viewModel.Name);
-                ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
-                return View(viewModel);
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Delete(int? id, CancellationToken cancellationToken)
-        {
-            if (id == null)
-            {
-                return NotFound();
+                ModelState.AddModelError("", "Добавьте хотя бы один ингредиент");
+                return await ReturnViewWithIngredients(viewModel, cancellationToken);
             }
 
-            string currentUserId = GetCurrentUserId();
-
-            var recipe = await _context.Recipes
-                .FirstOrDefaultAsync(m => m.Id == id && m.UserId == currentUserId, cancellationToken);
-
-            if (recipe == null)
-            {
-                return NotFound();
-            }
-
-            return View(recipe);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
-        {
-            string currentUserId = GetCurrentUserId();
-
-            var recipe = await _context.Recipes
-                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
-
-            if (recipe == null)
-            {
-                return NotFound();
-            }
-
-            TryDeleteRecipeImage(recipe.ImagePath);
-
-            _context.Recipes.Remove(recipe);
+            _context.Recipes.Add(recipe);
             await _context.SaveChangesAsync(cancellationToken);
 
             return RedirectToAction(nameof(Index));
         }
-
-        [SuppressMessage("Security", "CA3003:Review code for file path injection vulnerabilities",
-        Justification = "Path is normalized via GetFullPath and validated against uploadsFolder before use")]
-        private bool TryDeleteRecipeImage(string? imagePath)
+        catch (OperationCanceledException)
         {
-            if (string.IsNullOrEmpty(imagePath) || imagePath == DefaultNoImagePath)
-            {
-                return false;
-            }
+            _logger.LogWarning("Создание рецепта '{RecipeName}' было отменено", viewModel.Name);
+            return new StatusCodeResult(499);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _logger.LogError(dbEx, "Ошибка базы данных при добавлении рецепта '{RecipeName}'", viewModel.Name);
+            ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
+            return View(viewModel);
+        }
+    }
 
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
-            var fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
-                imagePath.TrimStart('/')));
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
 
-            if (!fullPath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning("Попытка удаления файла вне разрешённой директории: {FilePath}", fullPath);
-                return false;
-            }
+        var recipe = await _context.Recipes
+            .Include(r => r.RecipeIngredients)
+                .ThenInclude(ri => ri.Ingredient)
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
 
-            try
-            {
-                if (System.IO.File.Exists(fullPath))
-                {
-                    System.IO.File.Delete(fullPath);
-                }
+        if (recipe == null) return NotFound();
 
-                return true;
-            }
-            catch (IOException ex)
+        var allIngredients = await GetIngredientsListAsync(cancellationToken);
+
+        var viewModel = new RecipeEditViewModel
+        {
+            Id = recipe.Id,
+            Name = recipe.Name,
+            Description = recipe.Description,
+            CookingTime = recipe.CookingTime,
+            Instructions = recipe.Instructions,
+            CurrentImagePath = recipe.ImagePath,
+            PossibleRecipeIngredients = allIngredients,
+            RecipeIngredients = recipe.RecipeIngredients.Select(ri => new RecipeIngredientViewModel
             {
-                _logger.LogWarning(ex, "Не удалось удалить файл изображения: {FilePath}", fullPath);
-                return false;
-            }
+                IngredientId = ri.IngredientId,
+                Amount = ri.Amount
+            }).ToList()
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(RecipeEditViewModel viewModel, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+
+        if (!ModelState.IsValid)
+        {
+            return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
         }
 
-        private async Task<List<SelectListItem>> GetIngredientsListAsync(CancellationToken cancellationToken)
+        try
         {
             string currentUserId = GetCurrentUserId();
 
-            return await _context.Ingredients
-                .Where(i => i.UserId == currentUserId)
-                .OrderBy(i => i.Name)
-                .Select(i => new SelectListItem
+            var recipe = await _context.Recipes
+                .Include(r => r.RecipeIngredients)
+                .FirstOrDefaultAsync(r => r.Id == viewModel.Id && r.UserId == currentUserId, cancellationToken);
+
+            if (recipe == null) return NotFound();
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
+            string? oldImagePath = recipe.ImagePath;
+
+            string newImagePath = DefaultNoImagePath;
+            if (!string.IsNullOrEmpty(viewModel.CurrentImagePath))
+            {
+                var candidatePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+                    viewModel.CurrentImagePath.TrimStart('/')));
+
+                if (candidatePath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase)
+                    || viewModel.CurrentImagePath == DefaultNoImagePath)
                 {
-                    Value = i.Id.ToString(CultureInfo.InvariantCulture),
-                    Text = $"{i.Name} ({i.Unit})"
-                })
-                .ToListAsync(cancellationToken);
+                    newImagePath = viewModel.CurrentImagePath;
+                }
+                else
+                {
+                    _logger.LogWarning("Обнаружена попытка подмены пути изображения: {Path}", viewModel.CurrentImagePath);
+                }
+            }
+
+            if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
+            {
+                var ext = Path.GetExtension(viewModel.ImageFile.FileName);
+
+                if (!AppConstants.AllowedImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("ImageFile", "Можно загружать только JPG или PNG файлы");
+                    return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+                }
+
+                if (viewModel.ImageFile.Length > AppConstants.MaxFileSize)
+                {
+                    ModelState.AddModelError("ImageFile", "Размер файла не должен превышать 5MB");
+                    return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+                }
+
+                if (!viewModel.ImageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("ImageFile", "Файл должен быть изображением");
+                    return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+                }
+
+                var newFileName = Guid.NewGuid().ToString() + ext;
+                Directory.CreateDirectory(uploadsFolder);
+                var filePath = Path.Combine(uploadsFolder, newFileName);
+
+                using (var image = Image.Load(viewModel.ImageFile.OpenReadStream()))
+                {
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(ImageSize, ImageSize),
+                        Mode = ResizeMode.Crop,
+                        Position = AnchorPositionMode.Center,
+                        Sampler = KnownResamplers.Lanczos3
+                    }));
+
+                    image.Save(filePath);
+                }
+
+                newImagePath = "/uploads/recipes/" + newFileName;
+            }
+
+            recipe.Name = viewModel.Name;
+            recipe.Description = viewModel.Description;
+            recipe.CookingTime = viewModel.CookingTime;
+            recipe.Instructions = viewModel.Instructions?.Trim();
+            recipe.ImagePath = newImagePath;
+
+            recipe.RecipeIngredients.Clear();
+            var addedIngredients = new HashSet<int>();
+
+            foreach (var ingredientVm in viewModel.RecipeIngredients)
+            {
+                if (ingredientVm.IngredientId > 0 && ingredientVm.Amount > 0)
+                {
+                    if (!addedIngredients.Add(ingredientVm.IngredientId))
+                    {
+                        ModelState.AddModelError("", "Один из ингредиентов добавлен в рецепт дважды");
+                        return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+                    }
+
+                    recipe.RecipeIngredients.Add(new RecipeIngredient
+                    {
+                        IngredientId = ingredientVm.IngredientId,
+                        Amount = ingredientVm.Amount
+                    });
+                }
+            }
+
+            if (!viewModel.RecipeIngredients.Any(i => i.IngredientId > 0 && i.Amount > 0))
+            {
+                ModelState.AddModelError("", "Добавьте хотя бы один ингредиент");
+                return await ReturnViewWithIngredientsEdit(viewModel, cancellationToken);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (!string.IsNullOrEmpty(oldImagePath) && oldImagePath != DefaultNoImagePath && oldImagePath != newImagePath)
+            {
+                TryDeleteRecipeImage(oldImagePath);
+            }
+
+            return RedirectToAction(nameof(Details), new { id = recipe.Id });
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Редактирование рецепта '{RecipeName}' было отменено", viewModel.Name);
+            return new StatusCodeResult(499);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _logger.LogError(dbEx, "Ошибка базы данных при редактировании рецепта '{RecipeName}'", viewModel.Name);
+            ModelState.AddModelError("", "Произошла ошибка базы данных при сохранении. Попробуйте еще раз.");
+            return View(viewModel);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Delete(int? id, CancellationToken cancellationToken)
+    {
+        if (id == null)
+        {
+            return NotFound();
         }
 
-        private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel,
-            CancellationToken cancellationToken)
+        string currentUserId = GetCurrentUserId();
+
+        var recipe = await _context.Recipes
+            .FirstOrDefaultAsync(m => m.Id == id && m.UserId == currentUserId, cancellationToken);
+
+        if (recipe == null)
         {
-            viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
-            return View("Create", viewModel);
+            return NotFound();
         }
 
-        private async Task<IActionResult> ReturnViewWithIngredientsEdit(RecipeEditViewModel viewModel,
-            CancellationToken cancellationToken)
+        return View(recipe);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
+
+        var recipe = await _context.Recipes
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == currentUserId, cancellationToken);
+
+        if (recipe == null)
         {
-            viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
-            return View("Edit", viewModel);
+            return NotFound();
         }
+
+        TryDeleteRecipeImage(recipe.ImagePath);
+
+        _context.Recipes.Remove(recipe);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [SuppressMessage("Security", "CA3003:Review code for file path injection vulnerabilities",
+    Justification = "Path is normalized via GetFullPath and validated against uploadsFolder before use")]
+    private bool TryDeleteRecipeImage(string? imagePath)
+    {
+        if (string.IsNullOrEmpty(imagePath) || imagePath == DefaultNoImagePath)
+        {
+            return false;
+        }
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "recipes");
+        var fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot",
+            imagePath.TrimStart('/')));
+
+        if (!fullPath.StartsWith(Path.GetFullPath(uploadsFolder), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Попытка удаления файла вне разрешённой директории: {FilePath}", fullPath);
+            return false;
+        }
+
+        try
+        {
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+
+            return true;
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Не удалось удалить файл изображения: {FilePath}", fullPath);
+            return false;
+        }
+    }
+
+    private async Task<List<SelectListItem>> GetIngredientsListAsync(CancellationToken cancellationToken)
+    {
+        string currentUserId = GetCurrentUserId();
+
+        return await _context.Ingredients
+            .Where(i => i.UserId == currentUserId)
+            .OrderBy(i => i.Name)
+            .Select(i => new SelectListItem
+            {
+                Value = i.Id.ToString(CultureInfo.InvariantCulture),
+                Text = $"{i.Name} ({i.Unit})"
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<IActionResult> ReturnViewWithIngredients(RecipeCreateViewModel viewModel,
+        CancellationToken cancellationToken)
+    {
+        viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
+        return View("Create", viewModel);
+    }
+
+    private async Task<IActionResult> ReturnViewWithIngredientsEdit(RecipeEditViewModel viewModel,
+        CancellationToken cancellationToken)
+    {
+        viewModel.PossibleRecipeIngredients = await GetIngredientsListAsync(cancellationToken);
+        return View("Edit", viewModel);
     }
 }
