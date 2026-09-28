@@ -3,7 +3,6 @@ using MealPlanner.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Numerics;
 
 namespace MealPlanner.Controllers;
 
@@ -54,40 +53,43 @@ public class WeeklyPlanController : BaseController
             return NotFound();
         }
 
-        if (!string.IsNullOrEmpty(selectedDays))
+        if (string.IsNullOrEmpty(selectedDays))
         {
-            var dayValues = selectedDays.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            return RedirectToAction("Index", "Recipe");
+        }
 
-            foreach (var dayValue in dayValues)
+        var requestedDays = new HashSet<DayOfWeek>();
+        foreach (var value in selectedDays.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (int.TryParse(value, out int dayInt) && Enum.IsDefined((DayOfWeek)dayInt))
             {
-                if (int.TryParse(dayValue, out int dayInt))
-                {
-                    var dayOfWeek = (DayOfWeek)dayInt;
-
-                    var exists = await _context.WeeklyPlans
-                        .AnyAsync(wp => wp.RecipeId == recipeId
-                                     && wp.DayOfWeek == dayOfWeek
-                                     && wp.UserId == currentUserId, cancellationToken);
-
-                    if (!exists)
-                    {
-                        _context.WeeklyPlans.Add(new WeeklyPlan
-                        {
-                            RecipeId = recipeId,
-                            DayOfWeek = dayOfWeek,
-                            UserId = currentUserId
-                        });
-                    }
-                }
+                requestedDays.Add((DayOfWeek)dayInt);
             }
+        }
 
-            await _context.SaveChangesAsync(cancellationToken);
+        var existingDays = await _context.WeeklyPlans
+            .Where(wp => wp.RecipeId == recipeId && wp.UserId == currentUserId)
+            .Select(wp => wp.DayOfWeek)
+            .ToListAsync(cancellationToken);
 
-            if (_logger.IsEnabled(LogLevel.Information))
+        var newDays = requestedDays.Except(existingDays).ToList();
+
+        foreach (var day in newDays)
+        {
+            _context.WeeklyPlans.Add(new WeeklyPlan
             {
-                _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
-                currentUserId, recipeId, dayValues.Length);
-            }
+                RecipeId = recipeId,
+                DayOfWeek = day,
+                UserId = currentUserId
+            });
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
+                currentUserId, recipeId, newDays.Count);
         }
 
         return RedirectToAction("Index", "Recipe");
@@ -115,7 +117,7 @@ public class WeeklyPlanController : BaseController
         if (_logger.IsEnabled(LogLevel.Information))
         {
             _logger.LogInformation("Пользователь {UserId} удалил рецепт из плана на день {DayOfWeek}",
-            currentUserId, plan.DayOfWeek);
+                currentUserId, plan.DayOfWeek);
         }
 
         return RedirectToAction(nameof(Index));
