@@ -1,4 +1,5 @@
 ﻿using MealPlanner.Data;
+using MealPlanner.Models;
 using MealPlanner.ViewModels.ShoppingList;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ public class ShoppingListController : BaseController
         var allPlans = await _context.WeeklyPlans
             .Where(wp => wp.UserId == currentUserId)
             .Include(wp => wp.Recipe)
-                .ThenInclude(r => r.RecipeIngredients)
+                .ThenInclude(r => r!.RecipeIngredients)
                     .ThenInclude(ri => ri.Ingredient)
             .ToListAsync(cancellationToken);
 
@@ -40,7 +41,9 @@ public class ShoppingListController : BaseController
             .ToList();
 
         var aggregatedIngredients = plans
-            .SelectMany(p => p.Recipe.RecipeIngredients)
+            .Select(p => p.Recipe)
+            .OfType<Recipe>()
+            .SelectMany(r => r.RecipeIngredients)
             .GroupBy(ri => ri.IngredientId)
             .Select(g => new
             {
