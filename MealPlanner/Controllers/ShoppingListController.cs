@@ -84,7 +84,7 @@ public class ShoppingListController : BaseController
         return View(shoppingList);
     }
 
-    private string GetRussianDayName(DayOfWeek day) => day switch
+    private static string GetRussianDayName(DayOfWeek day) => day switch
     {
         DayOfWeek.Monday => "Понедельник",
         DayOfWeek.Tuesday => "Вторник",
