@@ -23,20 +23,16 @@ public class ShoppingListController : BaseController
         string currentUserId = GetCurrentUserId();
         DayOfWeek currentDayOfWeek = DateTime.Now.DayOfWeek;
 
-        var allPlans = await _context.WeeklyPlans
-            .Where(wp => wp.UserId == currentUserId)
-            .Include(wp => wp.Recipe)
-                .ThenInclude(r => r!.RecipeIngredients)
-                    .ThenInclude(ri => ri.Ingredient)
-            .ToListAsync(cancellationToken);
-
         var daysFromToday = WeekOrder
             .SkipWhile(d => d != currentDayOfWeek)
             .ToList();
 
-        var plans = allPlans
-            .Where(wp => daysFromToday.Contains(wp.DayOfWeek))
-            .ToList();
+        var plans = await _context.WeeklyPlans
+            .Where(wp => wp.UserId == currentUserId && daysFromToday.Contains(wp.DayOfWeek))
+            .Include(wp => wp.Recipe)
+                .ThenInclude(r => r!.RecipeIngredients)
+                    .ThenInclude(ri => ri.Ingredient)
+            .ToListAsync(cancellationToken);
 
         var aggregatedIngredients = plans
             .Select(p => p.Recipe)
