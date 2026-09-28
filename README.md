@@ -4,16 +4,24 @@ A web application for meal planning and automatic shopping list generation.
 It helps users organize their weekly meals plan and aggregates ingredients to 
 create a single, optimized shopping list.
 
-**Status:** Work in progress.
+**Status:** Core features complete, active development.
 
 ## Features
 
 - [x] **Recipe Management:** Create, read, update, and delete recipes.
 - [x] **Ingredient Dictionary:** Centralized database of products with strict units (g, ml, pcs) to prevent typos and ensure accurate calculations.
-- [ ] **Weekly Meal Planner:** Assign recipes to specific days of the week.
-- [ ] **Smart Shopping List:** Automatically aggregates required ingredients for the week and subtracts items already available in the virtual "Pantry".
-- [ ] **User Authentication:** Secure registration and login, ensuring each user has isolated data.
+- [x] **Weekly Meal Planner:** Assign recipes to specific days of the week.
+- [x] **Smart Shopping List:** Automatically aggregates required ingredients for the rest of the week and subtracts items already available in the virtual "Pantry".
+- [x] **User Authentication:** Secure registration and login, ensuring each user has isolated data.
 - [x] **Modern UI:** Responsive design built with Tailwind CSS.
+
+## Roadmap
+
+- [ ] Filter recipes by ingredients available in the pantry
+- [ ] Servings support with automatic ingredient scaling
+- [ ] Favorite recipes
+- [ ] Create ingredients from a modal window in the recipe creation form
+- [ ] Calorie information for ingredients and recipes
 
 ## Tech Stack
 
@@ -64,7 +72,14 @@ create a single, optimized shopping list.
 
 ## Screenshots
 
-Screenshots will be added as the UI is developed.
+### Recipes
+![Recipes list](docs/screenshots/recipes.png)
+
+### Weekly plan
+![Weekly plan](docs/screenshots/weekly-plan.png)
+
+### Shopping list
+![Shopping list](docs/screenshots/shopping-list.png)
 
 ## Credits
 
