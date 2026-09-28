@@ -43,56 +43,71 @@ public class WeeklyPlanController : BaseController
     {
         string currentUserId = GetCurrentUserId();
 
-        var recipe = await _context.Recipes
-            .FirstOrDefaultAsync(r => r.Id == recipeId && r.UserId == currentUserId, cancellationToken);
-
-        if (recipe == null)
+        try
         {
-            _logger.LogWarning("Попытка добавить несуществующий или чужой рецепт {RecipeId} в план пользователем {UserId}",
-                recipeId, currentUserId);
-            return NotFound();
-        }
+            var recipe = await _context.Recipes
+                .FirstOrDefaultAsync(r => r.Id == recipeId && r.UserId == currentUserId, cancellationToken);
 
-        if (string.IsNullOrEmpty(selectedDays))
-        {
+            if (recipe == null)
+            {
+                _logger.LogWarning("Попытка добавить несуществующий или чужой рецепт {RecipeId} в план пользователем {UserId}",
+                    recipeId, currentUserId);
+                return NotFound();
+            }
+
+            if (string.IsNullOrEmpty(selectedDays))
+            {
+                return RedirectToAction("Index", "Recipe");
+            }
+
+            var requestedDays = new HashSet<DayOfWeek>();
+            foreach (var value in selectedDays.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (int.TryParse(value, out int dayInt) && Enum.IsDefined((DayOfWeek)dayInt))
+                {
+                    requestedDays.Add((DayOfWeek)dayInt);
+                }
+            }
+
+            var existingDays = await _context.WeeklyPlans
+                .Where(wp => wp.RecipeId == recipeId && wp.UserId == currentUserId)
+                .Select(wp => wp.DayOfWeek)
+                .ToListAsync(cancellationToken);
+
+            var newDays = requestedDays.Except(existingDays).ToList();
+
+            foreach (var day in newDays)
+            {
+                _context.WeeklyPlans.Add(new WeeklyPlan
+                {
+                    RecipeId = recipeId,
+                    DayOfWeek = day,
+                    UserId = currentUserId
+                });
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
+                    currentUserId, recipeId, newDays.Count);
+            }
+
             return RedirectToAction("Index", "Recipe");
         }
-
-        var requestedDays = new HashSet<DayOfWeek>();
-        foreach (var value in selectedDays.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        catch (OperationCanceledException)
         {
-            if (int.TryParse(value, out int dayInt) && Enum.IsDefined((DayOfWeek)dayInt))
-            {
-                requestedDays.Add((DayOfWeek)dayInt);
-            }
+            _logger.LogWarning("Добавление рецепта {RecipeId} в план было отменено", recipeId);
+            return new StatusCodeResult(499);
         }
-
-        var existingDays = await _context.WeeklyPlans
-            .Where(wp => wp.RecipeId == recipeId && wp.UserId == currentUserId)
-            .Select(wp => wp.DayOfWeek)
-            .ToListAsync(cancellationToken);
-
-        var newDays = requestedDays.Except(existingDays).ToList();
-
-        foreach (var day in newDays)
+        catch (DbUpdateException dbEx)
         {
-            _context.WeeklyPlans.Add(new WeeklyPlan
-            {
-                RecipeId = recipeId,
-                DayOfWeek = day,
-                UserId = currentUserId
-            });
+            _logger.LogError(dbEx, "Ошибка базы данных при добавлении рецепта {RecipeId} в план пользователя {UserId}",
+                recipeId, currentUserId);
+            TempData["ErrorMessage"] = "Не удалось добавить рецепт в план. Попробуйте еще раз.";
+            return RedirectToAction("Index", "Recipe");
         }
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        if (_logger.IsEnabled(LogLevel.Information))
-        {
-            _logger.LogInformation("Пользователь {UserId} добавил рецепт {RecipeId} в план на {DaysCount} дней",
-                currentUserId, recipeId, newDays.Count);
-        }
-
-        return RedirectToAction("Index", "Recipe");
     }
 
     [HttpPost]
@@ -101,25 +116,40 @@ public class WeeklyPlanController : BaseController
     {
         string currentUserId = GetCurrentUserId();
 
-        var plan = await _context.WeeklyPlans
-            .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == currentUserId, cancellationToken);
-
-        if (plan == null)
+        try
         {
-            _logger.LogWarning("Попытка удалить несуществующий или чужой план с ID {PlanId} пользователем {UserId}",
+            var plan = await _context.WeeklyPlans
+                .FirstOrDefaultAsync(wp => wp.Id == id && wp.UserId == currentUserId, cancellationToken);
+
+            if (plan == null)
+            {
+                _logger.LogWarning("Попытка удалить несуществующий или чужой план с ID {PlanId} пользователем {UserId}",
+                    id, currentUserId);
+                return NotFound();
+            }
+
+            _context.WeeklyPlans.Remove(plan);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Пользователь {UserId} удалил рецепт из плана на день {DayOfWeek}",
+                    currentUserId, plan.DayOfWeek);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Удаление плана {PlanId} было отменено", id);
+            return new StatusCodeResult(499);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _logger.LogError(dbEx, "Ошибка базы данных при удалении плана {PlanId} пользователя {UserId}", 
                 id, currentUserId);
-            return NotFound();
+            TempData["ErrorMessage"] = "Не удалось удалить рецепт из плана. Попробуйте еще раз.";
+            return RedirectToAction(nameof(Index));
         }
-
-        _context.WeeklyPlans.Remove(plan);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        if (_logger.IsEnabled(LogLevel.Information))
-        {
-            _logger.LogInformation("Пользователь {UserId} удалил рецепт из плана на день {DayOfWeek}",
-                currentUserId, plan.DayOfWeek);
-        }
-
-        return RedirectToAction(nameof(Index));
     }
 }
