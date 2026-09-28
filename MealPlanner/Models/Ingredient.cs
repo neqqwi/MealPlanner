@@ -11,7 +11,7 @@ public class Ingredient
     public string Name { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Выберите единицу измерения")]
-    [RegularExpression("^(г|мл)$", ErrorMessage = "Недопустимая единица измерения")]
+    [RegularExpression("^(г|мл|шт)$", ErrorMessage = "Недопустимая единица измерения")]
     public string Unit { get; set; } = string.Empty;
     public ICollection<RecipeIngredient> RecipeIngredients { get; } = new List<RecipeIngredient>();
 
