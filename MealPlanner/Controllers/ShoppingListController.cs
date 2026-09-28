@@ -30,11 +30,9 @@ public class ShoppingListController : BaseController
                     .ThenInclude(ri => ri.Ingredient)
             .ToListAsync(cancellationToken);
 
-        var daysFromToday = new List<DayOfWeek>();
-        for (int i = (int)currentDayOfWeek; i <= (int)DayOfWeek.Sunday; i++)
-        {
-            daysFromToday.Add((DayOfWeek)i);
-        }
+        var daysFromToday = WeekOrder
+            .SkipWhile(d => d != currentDayOfWeek)
+            .ToList();
 
         var plans = allPlans
             .Where(wp => daysFromToday.Contains(wp.DayOfWeek))
@@ -97,5 +95,10 @@ public class ShoppingListController : BaseController
         DayOfWeek.Saturday => "Суббота",
         DayOfWeek.Sunday => "Воскресенье",
         _ => day.ToString()
+    };
+    private static readonly DayOfWeek[] WeekOrder =
+    {
+        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+        DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
     };
 }
